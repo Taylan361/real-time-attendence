@@ -373,7 +373,16 @@ body {
 
 /* Bildirim */
 .notification-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-.notification-box { background: white; padding: 2rem; border-radius: 15px; text-align: center; width: 90%; max-width: 350px; animation: popIn 0.3s ease; }
+.notification-box {
+  background: white;
+  padding: 2rem;
+  border-radius: 15px;
+  text-align: center;
+  width: 90%;
+  max-width: 350px;
+  animation: popIn 0.3s ease;
+  color: #333; /* Kutudaki tüm yazılar varsayılan olarak koyu olsun */
+}
 .notification-icon { width: 60px; height: 60px; margin: 0 auto 1rem auto; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; color: white; }
 .icon-success { background-color: #4CAF50; box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.2); }
 .icon-error { background-color: #F44336; box-shadow: 0 0 0 5px rgba(244, 67, 54, 0.2); }
