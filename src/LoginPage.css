@@ -1,4 +1,4 @@
-/* LoginPage.css - Responsive (Yazı Küçültmeli) Versiyon */
+/* LoginPage.css - Responsive Hamburger Menülü Final */
 
 :root {
   --primary-color: #4b2e83; /* Maltepe Moru */
@@ -33,8 +33,7 @@ body {
   align-items: center;
   padding: 0 2rem;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  z-index: 100;
-  transition: all 0.3s ease; /* Boyut değişimleri yumuşak olsun */
+  z-index: 1000; /* Menü her şeyin üstünde olsun */
 }
 
 .header-left {
@@ -46,7 +45,6 @@ body {
 .header-logo {
   height: 60px;
   width: auto;
-  transition: height 0.3s ease;
 }
 
 .system-titles {
@@ -59,18 +57,16 @@ body {
   font-weight: 800;
   font-size: 1.2rem;
   line-height: 1.2;
-  white-space: nowrap; /* Alt satıra inmesini engeller */
 }
 
 .system-name {
   color: #666;
   font-size: 0.9rem;
   font-weight: 500;
-  white-space: nowrap;
 }
 
-/* Header Menü Linkleri */
-.header-right-area {
+/* --- MASAÜSTÜ MENÜ ALANI (Masaüstünde Görünür) --- */
+.desktop-nav-area {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -91,7 +87,6 @@ body {
   transition: all 0.3s;
   padding: 8px 15px;
   border-radius: 20px;
-  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -104,7 +99,129 @@ body {
   background-color: rgba(75, 46, 131, 0.1);
 }
 
-/* --- DİL SEÇİMİ --- */
+/* --- HAMBURGER BUTTON (Sadece Mobilde Görünür) --- */
+.hamburger-btn {
+  display: none; /* Varsayılan olarak gizli */
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 5px;
+}
+
+/* --- MOBİL MENÜ (Slide-In) --- */
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Arka planı karart */
+  z-index: 2000;
+  display: flex;
+  justify-content: flex-end; /* Sağa yasla */
+  animation: fadeIn 0.3s ease;
+}
+
+.mobile-menu-content {
+  width: 75%;
+  max-width: 300px;
+  height: 100%;
+  background: white;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+  animation: slideInRight 0.3s ease-out;
+}
+
+.mobile-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.mobile-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mobile-link {
+  font-size: 1.1rem;
+  padding: 10px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-link.active {
+  background-color: #f0ebf8;
+  color: var(--primary-color);
+}
+
+/* Mobil Dil Seçimi */
+.mobile-lang-section {
+  margin-top: auto; /* En alta it */
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+}
+
+.mobile-lang-title {
+  font-size: 0.9rem;
+  color: #999;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.mobile-flags {
+  display: flex;
+  gap: 10px;
+}
+
+/* LoginPage.css içinde bu kısmı bul ve değiştir */
+
+.mobile-flag-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #ccc; /* Daha belirgin gri kenarlık */
+  border-radius: 8px;
+  background-color: #fff; /* Arka planı net beyaz yap */
+  color: #333; /* Yazı rengini koyu yap */
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Hafif gölge ekle ki zeminden ayrılsın */
+}
+
+.mobile-flag-btn.active {
+  border-color: var(--primary-color);
+  background-color: #f3eefc; /* Seçili olunca açık mor zemin */
+  font-weight: bold;
+  color: var(--primary-color);
+  box-shadow: none; /* Seçiliyken gölgeyi kaldır */
+}
+
+/* --- DİL SEÇİMİ (Masaüstü) --- */
 .language-dropdown {
   position: relative;
   z-index: 1000;
@@ -207,23 +324,23 @@ body {
   overflow-y: auto;
 }
 
-/* İçerik Stilleri */
 .login-header h2 { color: var(--primary-color); margin-bottom: 0.5rem; }
 .login-header p { color: #666; margin-bottom: 2rem; font-size: 0.9rem; }
 .form-group { margin-bottom: 1rem; text-align: left; }
 .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-color); font-weight: 600; font-size: 0.9rem; }
-/* LoginPage.css içinde bul ve bununla değiştir */
 
-.form-group input {
-  width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  background-color: #fff; /* Kutunun içi Beyaz */
-  color: #333; /* ÖNEMLİ DÜZELTME: Yazı Rengi Koyu Gri (Okunması için) */
-  transition: border-color 0.3s;
+/* INPUT RENGİ DÜZELTİLDİ */
+.form-group input { 
+  width: 100%; 
+  padding: 0.8rem; 
+  border: 1px solid #ddd; 
+  border-radius: 6px; 
+  font-size: 1rem; 
+  background-color: #fff; 
+  color: #333; /* YAZI RENGİ SİYAH YAPILDI */
+  transition: border-color 0.3s; 
 }
+
 .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(75, 46, 131, 0.1); }
 .remember-forgot { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 1.5rem; }
 .remember-me { display: flex; align-items: center; gap: 5px; cursor: pointer; color: #555; }
@@ -258,66 +375,25 @@ body {
 .icon-success { background-color: #4CAF50; box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.2); }
 .icon-error { background-color: #F44336; box-shadow: 0 0 0 5px rgba(244, 67, 54, 0.2); }
 @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-/* --- RESPONSIVE / MOBİL AYARLARI (GÜNCELLENDİ) --- */
+/* --- RESPONSIVE / MOBİL AYARLARI --- */
 @media (max-width: 768px) {
   /* Header Daraltma */
-  .app-header {
-    padding: 0 0.8rem; /* Kenar boşluklarını azalt */
-    height: 60px; /* Header yüksekliğini azalt */
-    justify-content: space-between;
-  }
-
-  .header-left {
-    gap: 8px; /* Logo ve yazı arası boşluğu azalt */
-  }
-
-  .header-logo {
-    height: 35px; /* Logo küçültüldü */
-  }
-
-  .uni-name {
-    font-size: 0.8rem; /* Üniversite adı küçültüldü */
-  }
+  .app-header { padding: 0 1rem; height: 60px; }
+  .header-logo { height: 40px; }
+  .uni-name { font-size: 0.9rem; }
   
-  .system-name {
-    font-size: 0.65rem; /* Alt yazı iyice küçültüldü */
-    display: block; /* Gizleme, sadece küçült */
-  }
-
-  /* Sağ Taraf (Menü ve Dil) */
-  .header-right-area {
-    gap: 8px; /* Linkler ve Dil arası boşluk azaldı */
-  }
+  /* Mobilde uzun ismi gizle */
+  .system-name { display: none; }
   
-  .header-nav {
-    gap: 4px; /* Butonlar arası boşluk azaldı */
-  }
-
-  .nav-link {
-    font-size: 0.75rem; /* Menü yazıları küçüldü */
-    padding: 5px 8px; /* Buton içi boşluk azaldı */
-  }
-
-  /* Dil Seçimi */
-  .selected-lang {
-    padding: 5px 8px;
-    gap: 4px;
-    font-size: 0.75rem;
-  }
+  /* Mobilde Masaüstü Menüyü Gizle */
+  .desktop-nav-area { display: none; }
   
-  .flag-icon {
-    width: 18px;
-    height: 12px;
-  }
-  
-  .arrow-icon {
-    display: none; /* Mobilde oku gizle, yer kazanalım */
-  }
+  /* Hamburger Butonunu Göster */
+  .hamburger-btn { display: block; }
 
-  /* Giriş Kutusu */
-  .login-card {
-    width: 95%; /* Ekrana tam yayılsın */
-    padding: 1.5rem; /* İç boşluğu azalt */
-  }
+  /* Login Kutusunu Ekrana Sığdır */
+  .login-card { padding: 1.5rem; width: 95%; }
 }
