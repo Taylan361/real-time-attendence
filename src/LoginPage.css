@@ -1,4 +1,4 @@
-/* LoginPage.css - Responsive Hamburger Menülü Final */
+/* LoginPage.css - Final Tam Sürüm */
 
 :root {
   --primary-color: #4b2e83; /* Maltepe Moru */
@@ -33,7 +33,7 @@ body {
   align-items: center;
   padding: 0 2rem;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  z-index: 1000; /* Menü her şeyin üstünde olsun */
+  z-index: 1000;
 }
 
 .header-left {
@@ -65,7 +65,7 @@ body {
   font-weight: 500;
 }
 
-/* --- MASAÜSTÜ MENÜ ALANI (Masaüstünde Görünür) --- */
+/* --- MASAÜSTÜ MENÜ ALANI --- */
 .desktop-nav-area {
   display: flex;
   align-items: center;
@@ -99,9 +99,9 @@ body {
   background-color: rgba(75, 46, 131, 0.1);
 }
 
-/* --- HAMBURGER BUTTON (Sadece Mobilde Görünür) --- */
+/* --- HAMBURGER BUTTON (Mobilde Görünür) --- */
 .hamburger-btn {
-  display: none; /* Varsayılan olarak gizli */
+  display: none;
   background: none;
   border: none;
   font-size: 1.8rem;
@@ -110,17 +110,17 @@ body {
   padding: 5px;
 }
 
-/* --- MOBİL MENÜ (Slide-In) --- */
+/* --- MOBİL MENÜ (Drawer) --- */
 .mobile-menu-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5); /* Arka planı karart */
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 2000;
   display: flex;
-  justify-content: flex-end; /* Sağa yasla */
+  justify-content: flex-end;
   animation: fadeIn 0.3s ease;
 }
 
@@ -177,11 +177,8 @@ body {
 }
 
 /* Mobil Dil Seçimi */
-/* LoginPage.css içinde bul ve değiştir */
-
 .mobile-lang-section {
-  /* margin-top: auto;  <-- BU SATIRI SİLDİK (Artık en alta gitmeyecek) */
-  margin-top: 1.5rem; /* Yukarıdaki menüden biraz boşluk bırakıp hemen altına koy */
+  margin-top: 1.5rem;
   border-top: 1px solid #eee;
   padding-top: 1rem;
 }
@@ -198,8 +195,6 @@ body {
   gap: 10px;
 }
 
-/* LoginPage.css içinde bu kısmı bul ve değiştir */
-
 .mobile-flag-btn {
   flex: 1;
   display: flex;
@@ -207,21 +202,21 @@ body {
   justify-content: center;
   gap: 8px;
   padding: 10px;
-  border: 1px solid #ccc; /* Daha belirgin gri kenarlık */
+  border: 1px solid #ccc;
   border-radius: 8px;
-  background-color: #fff; /* Arka planı net beyaz yap */
-  color: #333; /* Yazı rengini koyu yap */
+  background-color: #fff;
+  color: #333;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Hafif gölge ekle ki zeminden ayrılsın */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .mobile-flag-btn.active {
   border-color: var(--primary-color);
-  background-color: #f3eefc; /* Seçili olunca açık mor zemin */
+  background-color: #f3eefc;
   font-weight: bold;
   color: var(--primary-color);
-  box-shadow: none; /* Seçiliyken gölgeyi kaldır */
+  box-shadow: none;
 }
 
 /* --- DİL SEÇİMİ (Masaüstü) --- */
@@ -301,14 +296,20 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* --- ANA KAPSAYICI --- */
+/* --- ANA KAPSAYICI (Arka Plan Resimli) --- */
 .login-container {
   width: 100vw;
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  
+  /* Arka Plan Resmi ve Filtresi */
+  background: linear-gradient(rgba(75, 46, 131, 0.7), rgba(75, 46, 131, 0.7)), url('./assets/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  
   padding-top: 80px;
 }
 
@@ -323,7 +324,7 @@ body {
   display: flex;
   flex-direction: column;
   transition: height 0.3s ease;
-  max-height: 85vh; /* Mobilde taşmasın */
+  max-height: 85vh;
   overflow-y: auto;
 }
 
@@ -332,7 +333,7 @@ body {
 .form-group { margin-bottom: 1rem; text-align: left; }
 .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-color); font-weight: 600; font-size: 0.9rem; }
 
-/* INPUT RENGİ DÜZELTİLDİ */
+/* Input Rengi (Okunabilirlik için) */
 .form-group input { 
   width: 100%; 
   padding: 0.8rem; 
@@ -340,7 +341,7 @@ body {
   border-radius: 6px; 
   font-size: 1rem; 
   background-color: #fff; 
-  color: #333; /* YAZI RENGİ SİYAH YAPILDI */
+  color: #333; /* Yazı rengi koyu gri */
   transition: border-color 0.3s; 
 }
 
@@ -371,33 +372,25 @@ body {
 .about-content::-webkit-scrollbar { width: 6px; }
 .about-content::-webkit-scrollbar-thumb { background-color: #ddd; border-radius: 3px; }
 
-/* Bildirim */
+/* Bildirim (Popup) */
 .notification-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-.notification-box {
-  background: white;
-  padding: 2rem;
-  border-radius: 15px;
-  text-align: center;
-  width: 90%;
-  max-width: 350px;
-  animation: popIn 0.3s ease;
-  color: #333; /* Kutudaki tüm yazılar varsayılan olarak koyu olsun */
-}
+.notification-box { background: white; padding: 2rem; border-radius: 15px; text-align: center; width: 90%; max-width: 350px; animation: popIn 0.3s ease; color: #333; }
 .notification-icon { width: 60px; height: 60px; margin: 0 auto 1rem auto; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; color: white; }
+.notification-message { font-size: 1.1rem; color: #333; margin-bottom: 1.5rem; font-weight: 600; padding: 0 10px; }
 .icon-success { background-color: #4CAF50; box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.2); }
 .icon-error { background-color: #F44336; box-shadow: 0 0 0 5px rgba(244, 67, 54, 0.2); }
+
 @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
 /* --- RESPONSIVE / MOBİL AYARLARI --- */
 @media (max-width: 768px) {
-  /* Header Daraltma */
   .app-header { padding: 0 1rem; height: 60px; }
   .header-logo { height: 40px; }
   .uni-name { font-size: 0.9rem; }
   
-  /* Mobilde uzun ismi gizle */
+  /* Mobilde sistem adını gizle */
   .system-name { display: none; }
   
   /* Mobilde Masaüstü Menüyü Gizle */
@@ -406,6 +399,5 @@ body {
   /* Hamburger Butonunu Göster */
   .hamburger-btn { display: block; }
 
-  /* Login Kutusunu Ekrana Sığdır */
   .login-card { padding: 1.5rem; width: 95%; }
 }
