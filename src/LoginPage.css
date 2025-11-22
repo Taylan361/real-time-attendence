@@ -1,0 +1,312 @@
+/* LoginPage.css - Responsive (Yazı Küçültmeli) Versiyon */
+
+:root {
+  --primary-color: #4b2e83; /* Maltepe Moru */
+  --secondary-color: #7a5cbf;
+  --bg-color: #f4f4f9;
+  --text-color: #333;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--bg-color);
+  overflow: hidden; 
+}
+
+/* --- HEADER ALANI --- */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  z-index: 100;
+  transition: all 0.3s ease; /* Boyut değişimleri yumuşak olsun */
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-logo {
+  height: 60px;
+  width: auto;
+  transition: height 0.3s ease;
+}
+
+.system-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.uni-name {
+  color: var(--primary-color);
+  font-weight: 800;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  white-space: nowrap; /* Alt satıra inmesini engeller */
+}
+
+.system-name {
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Header Menü Linkleri */
+.header-right-area {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.header-nav {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-link {
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  color: #555;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 8px 15px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: var(--primary-color);
+  background-color: rgba(75, 46, 131, 0.05);
+}
+
+.nav-link.active {
+  color: var(--primary-color);
+  background-color: rgba(75, 46, 131, 0.1);
+}
+
+/* --- DİL SEÇİMİ --- */
+.language-dropdown {
+  position: relative;
+  z-index: 1000;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.selected-lang {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8f9fa;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.selected-lang:hover {
+  background-color: #eef0f2;
+  border-color: #d0d0d0;
+}
+
+.arrow-icon {
+  font-size: 0.8rem;
+  color: #666;
+  transition: transform 0.3s ease;
+}
+
+.language-dropdown:hover .arrow-icon { transform: rotate(180deg); }
+
+.lang-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  width: 160px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  border: 1px solid #f0f0f0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-15px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.language-dropdown:hover .lang-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.lang-option:hover { background-color: #f4f4f9; color: var(--primary-color); }
+
+.flag-icon {
+  width: 24px;
+  height: 16px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- ANA KAPSAYICI --- */
+.login-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  padding-top: 80px;
+}
+
+.login-card {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  transition: height 0.3s ease;
+  max-height: 85vh; /* Mobilde taşmasın */
+  overflow-y: auto;
+}
+
+/* İçerik Stilleri */
+.login-header h2 { color: var(--primary-color); margin-bottom: 0.5rem; }
+.login-header p { color: #666; margin-bottom: 2rem; font-size: 0.9rem; }
+.form-group { margin-bottom: 1rem; text-align: left; }
+.form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-color); font-weight: 600; font-size: 0.9rem; }
+.form-group input { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; background-color: #fff; transition: border-color 0.3s; }
+.form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(75, 46, 131, 0.1); }
+.remember-forgot { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 1.5rem; }
+.remember-me { display: flex; align-items: center; gap: 5px; cursor: pointer; color: #555; }
+.remember-me input { accent-color: var(--primary-color); width: auto; }
+.login-button { width: 100%; padding: 0.9rem; background-color: var(--primary-color); color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s, transform 0.1s; }
+.login-button:hover { background-color: #3a2366; }
+.login-button:active { transform: scale(0.98); }
+.selection-buttons { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+.role-button { padding: 1.2rem; background-color: white; border: 2px solid var(--primary-color); color: var(--primary-color); border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: all 0.3s ease; }
+.role-button.inactive { border-color: #ddd; color: #999; }
+.role-button:hover:not(.inactive) { background-color: var(--primary-color); color: white; }
+.back-button { background: none; border: none; color: #666; cursor: pointer; font-size: 0.9rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 5px; padding: 0; }
+.register-link { margin-top: 1.5rem; font-size: 0.9rem; color: #666; }
+.register-link span { color: var(--primary-color); font-weight: bold; cursor: pointer; margin-left: 5px; }
+
+/* Hakkında Sayfası */
+.about-content { text-align: left; max-height: 55vh; overflow-y: auto; padding-right: 10px; }
+.about-section { margin-bottom: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
+.about-section:last-child { border-bottom: none; }
+.about-section h3 { color: var(--primary-color); font-size: 1.1rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 8px; }
+.about-section p, .about-section li { font-size: 0.95rem; color: #444; line-height: 1.6; }
+.team-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.team-member { background-color: #f0ebf8; color: var(--primary-color); padding: 5px 12px; border-radius: 15px; font-size: 0.9rem; font-weight: 600; }
+.tech-badges span { display: inline-block; background-color: #eee; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 6px; margin-bottom: 6px; }
+.about-content::-webkit-scrollbar { width: 6px; }
+.about-content::-webkit-scrollbar-thumb { background-color: #ddd; border-radius: 3px; }
+
+/* Bildirim */
+.notification-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+.notification-box { background: white; padding: 2rem; border-radius: 15px; text-align: center; width: 90%; max-width: 350px; animation: popIn 0.3s ease; }
+.notification-icon { width: 60px; height: 60px; margin: 0 auto 1rem auto; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; color: white; }
+.icon-success { background-color: #4CAF50; box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.2); }
+.icon-error { background-color: #F44336; box-shadow: 0 0 0 5px rgba(244, 67, 54, 0.2); }
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* --- RESPONSIVE / MOBİL AYARLARI (GÜNCELLENDİ) --- */
+@media (max-width: 768px) {
+  /* Header Daraltma */
+  .app-header {
+    padding: 0 0.8rem; /* Kenar boşluklarını azalt */
+    height: 60px; /* Header yüksekliğini azalt */
+    justify-content: space-between;
+  }
+
+  .header-left {
+    gap: 8px; /* Logo ve yazı arası boşluğu azalt */
+  }
+
+  .header-logo {
+    height: 35px; /* Logo küçültüldü */
+  }
+
+  .uni-name {
+    font-size: 0.8rem; /* Üniversite adı küçültüldü */
+  }
+  
+  .system-name {
+    font-size: 0.65rem; /* Alt yazı iyice küçültüldü */
+    display: block; /* Gizleme, sadece küçült */
+  }
+
+  /* Sağ Taraf (Menü ve Dil) */
+  .header-right-area {
+    gap: 8px; /* Linkler ve Dil arası boşluk azaldı */
+  }
+  
+  .header-nav {
+    gap: 4px; /* Butonlar arası boşluk azaldı */
+  }
+
+  .nav-link {
+    font-size: 0.75rem; /* Menü yazıları küçüldü */
+    padding: 5px 8px; /* Buton içi boşluk azaldı */
+  }
+
+  /* Dil Seçimi */
+  .selected-lang {
+    padding: 5px 8px;
+    gap: 4px;
+    font-size: 0.75rem;
+  }
+  
+  .flag-icon {
+    width: 18px;
+    height: 12px;
+  }
+  
+  .arrow-icon {
+    display: none; /* Mobilde oku gizle, yer kazanalım */
+  }
+
+  /* Giriş Kutusu */
+  .login-card {
+    width: 95%; /* Ekrana tam yayılsın */
+    padding: 1.5rem; /* İç boşluğu azalt */
+  }
+}

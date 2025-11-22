@@ -1,0 +1,26 @@
+export const translations = {
+  tr: {
+    title: "Gerçek Zamanlı Yoklama Sistemi",
+    welcome: "Giriş Yapın",
+    roleSelection: "Giriş Türünüzü Seçin:",
+    admin: "Yönetici",
+    student: "Öğrenci",
+    username: "Kullanıcı Adı",
+    password: "Şifre",
+    loginButton: "Giriş Yap",
+    error: "Kullanıcı Adı veya Şifre Hatalı.",
+    success: "Giriş Başarılı! Yönlendiriliyorsunuz...",
+  },
+  en: {
+    title: "Real Time Attendance System",
+    welcome: "Login",
+    roleSelection: "Select Your Role:",
+    admin: "Admin",
+    student: "Student",
+    username: "Username",
+    password: "Password",
+    loginButton: "Login",
+    error: "Invalid Username or Password.",
+    success: "Login Successful! Redirecting...",
+  },
+};
