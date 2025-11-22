@@ -212,7 +212,18 @@ body {
 .login-header p { color: #666; margin-bottom: 2rem; font-size: 0.9rem; }
 .form-group { margin-bottom: 1rem; text-align: left; }
 .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-color); font-weight: 600; font-size: 0.9rem; }
-.form-group input { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; background-color: #fff; transition: border-color 0.3s; }
+/* LoginPage.css içinde bul ve bununla değiştir */
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: #fff; /* Kutunun içi Beyaz */
+  color: #333; /* ÖNEMLİ DÜZELTME: Yazı Rengi Koyu Gri (Okunması için) */
+  transition: border-color 0.3s;
+}
 .form-group input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(75, 46, 131, 0.1); }
 .remember-forgot { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-bottom: 1.5rem; }
 .remember-me { display: flex; align-items: center; gap: 5px; cursor: pointer; color: #555; }
