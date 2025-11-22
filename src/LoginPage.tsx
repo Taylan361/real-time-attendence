@@ -191,7 +191,7 @@ const LoginPage: React.FC = () => {
   );
 
   const Header = () => {
-    const currentLangData = { tr: { flag: trFlag, label: "Türkçe" }, en: { flag: enFlag, label: "English" } };
+    const currentLangData = { tr: { flag: trFlag, label: "" }, en: { flag: enFlag, label: "" } };
 
     return (
       <header className="app-header">

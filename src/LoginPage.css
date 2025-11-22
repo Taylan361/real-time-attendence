@@ -177,8 +177,11 @@ body {
 }
 
 /* Mobil Dil Seçimi */
+/* LoginPage.css içinde bul ve değiştir */
+
 .mobile-lang-section {
-  margin-top: auto; /* En alta it */
+  /* margin-top: auto;  <-- BU SATIRI SİLDİK (Artık en alta gitmeyecek) */
+  margin-top: 1.5rem; /* Yukarıdaki menüden biraz boşluk bırakıp hemen altına koy */
   border-top: 1px solid #eee;
   padding-top: 1rem;
 }
