@@ -13,7 +13,7 @@ interface Student {
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) => {
-  const [selectedCourse, setSelectedCourse] = useState('cs101');
+ 
   
   // YOKLAMA LİSTESİ (STATE OLARAK TUTUYORUZ Kİ DEĞİŞTİREBİLELİM)
   const [students, setStudents] = useState<Student[]>([
