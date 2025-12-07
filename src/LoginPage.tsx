@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css';
 
-// Resim Importları
+// Resim Importları (Senin dosya yoluna göre aynı kalmalı)
 import logoImg from './assets/logo.jpg';
 import trFlag from './assets/tr.jpg';
 import enFlag from './assets/en.jpg';
 
-// --- ÇEVİRİ SÖZLÜĞÜ ---
+// --- ÇEVİRİ SÖZLÜĞÜ (AYNEN KORUNDU) ---
 const translations = {
   tr: {
     uniName: "MALTEPE ÜNİVERSİTESİ",
@@ -98,9 +98,9 @@ type ViewState = 'selection' | 'student' | 'admin' | 'register' | 'about';
 type NotificationType = 'success' | 'error' | null;
 type LangType = 'tr' | 'en';
 
-// App.tsx ile haberleşmek için bu özelliği ekledik
+// --- DEĞİŞİKLİK BURADA: App.tsx'in beklediği rol tipini tanımlıyoruz ---
 interface LoginPageProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (role: 'teacher' | 'student') => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -131,7 +131,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   }, []);
 
-  const showToast = (msg: string, type: 'success' | 'error') => {
+  const showToast = (msg: string, type: 'success' | 'error', redirectRole?: 'teacher' | 'student') => {
     setNotification({ msg, type });
     
     // Eğer kayıt olduysa geri dön, eğer giriş yaptıysa Dashboard'u aç
@@ -141,12 +141,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         if (view === 'register') {
           goBack();
         } 
-        // Giriş başarılıysa App.tsx'e haber veriyoruz (Dashboard açılsın diye)
-        else if (view === 'student' || view === 'admin') {
-           // Burada onLoginSuccess çağrılacak ama aşağıda handle submit içinde çağırmak daha güvenli
+        // --- DEĞİŞİKLİK BURADA: Giriş başarılıysa rolü App.tsx'e gönder ---
+        else if ((view === 'student' || view === 'admin') && redirectRole) {
+           onLoginSuccess(redirectRole);
         }
       }
-    }, 2000);
+    }, 1500); // 1.5 saniye bekleme
   };
 
   const clearForm = () => {
@@ -169,6 +169,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       const uniqueKey = registerRole === 'student' ? studentNumber : email;
       if (localStorage.getItem(uniqueKey)) return showToast(lang === 'tr' ? 'Kullanıcı zaten kayıtlı!' : 'User already registered!', 'error');
 
+      // Rolü burada 'admin' olarak kaydediyoruz, login olurken bunu 'teacher'a çevireceğiz.
       const newUser = { name, surname, email, studentNumber: registerRole === 'student' ? studentNumber : null, password, role: registerRole };
       localStorage.setItem(uniqueKey, JSON.stringify(newUser));
       showToast(lang === 'tr' ? 'Kayıt Başarılı! Yönlendiriliyorsunuz...' : 'Registration Successful! Redirecting...', 'success');
@@ -190,22 +191,29 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       const user = JSON.parse(userRecord);
       if (user.password !== password) return showToast(lang === 'tr' ? 'Hatalı şifre!' : 'Wrong password!', 'error');
+      
+      // Yetki Kontrolü
       if (view === 'admin' && user.role !== 'admin') return showToast(lang === 'tr' ? 'Bu alandan sadece Akademisyenler girebilir!' : 'Unauthorized Access!', 'error');
       if (view === 'student' && user.role !== 'student') return showToast(lang === 'tr' ? 'Lütfen akademisyen girişini kullanın.' : 'Please use instructor login.', 'error');
 
-      showToast(lang === 'tr' ? `Giriş Başarılı! Hoşgeldin ${user.name}` : `Login Successful! Welcome ${user.name}`, 'success');
-      
+      // --- KRİTİK DEĞİŞİKLİK ---
+      // Senin kodun 'admin' kullanıyor ama App.tsx 'teacher' bekliyor.
+      // Burada dönüşümü yapıyoruz:
+      const appRole = user.role === 'admin' ? 'teacher' : 'student';
+
       if (rememberMe) localStorage.setItem('savedLogin', searchKey); 
       else localStorage.removeItem('savedLogin');
 
-      // 1 saniye bekleyip Dashboard'a yönlendiriyoruz (Mesaj okunsun diye)
-      setTimeout(() => {
-        onLoginSuccess(); 
-      }, 1000);
+      // Toast mesajını göster ve ardından yönlendirmeyi tetikle
+      showToast(
+          lang === 'tr' ? `Giriş Başarılı! Hoşgeldin ${user.name}` : `Login Successful! Welcome ${user.name}`, 
+          'success',
+          appRole // Bu rol showToast içinden onLoginSuccess'e gidecek
+      );
     }
   };
 
-  // --- COMPONENTLER ---
+  // --- COMPONENTLER (Aynen Korundu) ---
   const NotificationModal = () => (
     <div className="notification-overlay">
       <div className="notification-box">
