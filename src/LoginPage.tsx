@@ -98,7 +98,12 @@ type ViewState = 'selection' | 'student' | 'admin' | 'register' | 'about';
 type NotificationType = 'success' | 'error' | null;
 type LangType = 'tr' | 'en';
 
-const LoginPage: React.FC = () => {
+// App.tsx ile haberleşmek için bu özelliği ekledik
+interface LoginPageProps {
+  onLoginSuccess: () => void;
+}
+
+const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [view, setView] = useState<ViewState>('selection');
   const [notification, setNotification] = useState<{msg: string, type: NotificationType}>({ msg: '', type: null });
   const [lang, setLang] = useState<LangType>('tr'); 
@@ -128,9 +133,19 @@ const LoginPage: React.FC = () => {
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setNotification({ msg, type });
+    
+    // Eğer kayıt olduysa geri dön, eğer giriş yaptıysa Dashboard'u aç
     setTimeout(() => {
       setNotification({ msg: '', type: null });
-      if (type === 'success' && view === 'register') goBack();
+      if (type === 'success') {
+        if (view === 'register') {
+          goBack();
+        } 
+        // Giriş başarılıysa App.tsx'e haber veriyoruz (Dashboard açılsın diye)
+        else if (view === 'student' || view === 'admin') {
+           // Burada onLoginSuccess çağrılacak ama aşağıda handle submit içinde çağırmak daha güvenli
+        }
+      }
     }, 2000);
   };
 
@@ -145,6 +160,8 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // --- KAYIT OLMA ---
     if (view === 'register') {
       if (registerRole === 'admin' && adminSecret !== 'MALT2024') return showToast(lang === 'tr' ? 'Hatalı Kurum Kodu!' : 'Invalid Institution Code!', 'error');
       if (registerRole === 'student' && studentNumber.length !== 9) return showToast(lang === 'tr' ? 'Öğrenci numarası 9 haneli olmalı!' : 'Student ID must be 9 digits!', 'error');
@@ -155,7 +172,10 @@ const LoginPage: React.FC = () => {
       const newUser = { name, surname, email, studentNumber: registerRole === 'student' ? studentNumber : null, password, role: registerRole };
       localStorage.setItem(uniqueKey, JSON.stringify(newUser));
       showToast(lang === 'tr' ? 'Kayıt Başarılı! Yönlendiriliyorsunuz...' : 'Registration Successful! Redirecting...', 'success');
-    } else {
+    } 
+    
+    // --- GİRİŞ YAPMA ---
+    else {
       let searchKey = '';
       if (view === 'student') {
         if (!studentNumber) return showToast(lang === 'tr' ? 'Öğrenci No Gerekli' : 'ID Required', 'error');
@@ -174,7 +194,14 @@ const LoginPage: React.FC = () => {
       if (view === 'student' && user.role !== 'student') return showToast(lang === 'tr' ? 'Lütfen akademisyen girişini kullanın.' : 'Please use instructor login.', 'error');
 
       showToast(lang === 'tr' ? `Giriş Başarılı! Hoşgeldin ${user.name}` : `Login Successful! Welcome ${user.name}`, 'success');
-      if (rememberMe) localStorage.setItem('savedLogin', searchKey); else localStorage.removeItem('savedLogin');
+      
+      if (rememberMe) localStorage.setItem('savedLogin', searchKey); 
+      else localStorage.removeItem('savedLogin');
+
+      // 1 saniye bekleyip Dashboard'a yönlendiriyoruz (Mesaj okunsun diye)
+      setTimeout(() => {
+        onLoginSuccess(); 
+      }, 1000);
     }
   };
 
@@ -191,7 +218,7 @@ const LoginPage: React.FC = () => {
   );
 
   const Header = () => {
-    const currentLangData = { tr: { flag: trFlag, label: "" }, en: { flag: enFlag, label: "" } };
+    const currentLangData = { tr: { flag: trFlag, label: "Türkçe" }, en: { flag: enFlag, label: "English" } };
 
     return (
       <header className="app-header">

@@ -1,0 +1,197 @@
+/* Dashboard.css - ÖDEVLER SAYFASI EKLEMELERİ */
+
+/* Toolbar (Arama ve Filtre) */
+.assignments-toolbar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.search-wrapper {
+  flex: 1; /* Kalan alanı kapla */
+  max-width: 400px;
+  background: white;
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.search-wrapper input {
+  border: none;
+  outline: none;
+  width: 100%;
+  margin-left: 10px;
+  color: #333;
+}
+
+.filter-btn {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+/* Sekmeler (Tabs) */
+.tabs-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.tab-btn {
+  background: #e2e8f0;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  color: #4a5568;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+
+.tab-btn.active {
+  background: #2d3436;
+  color: white;
+}
+
+/* Büyük Ödev Kartı */
+.assignments-list-large {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.assignment-card-large {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.assignment-icon-large {
+  font-size: 24px;
+  color: #718096;
+  background: #f8fafc;
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.assignment-content {
+  flex: 1;
+}
+
+.assignment-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.assignment-header-row h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2d3436;
+}
+
+.course-tag {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.tag-light {
+  background: #f1f5f9;
+  color: #4a5568;
+}
+
+.tag-dark {
+  background: #e2e8f0;
+  color: #2d3436;
+}
+
+.status-badge-dark {
+  background: #000;
+  color: white;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.assignment-desc {
+  color: #718096;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.assignment-meta-row {
+  display: flex;
+  gap: 20px;
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Butonlar */
+.assignment-actions {
+  display: flex;
+  gap: 10px;
+  align-self: center; /* Ortala */
+}
+
+.btn-view {
+  background: white;
+  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.btn-submit {
+  background: black;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Mobil Uyum */
+@media (max-width: 768px) {
+  .assignment-card-large {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .assignment-actions {
+    width: 100%;
+    margin-top: 10px;
+    justify-content: flex-end;
+  }
+}
