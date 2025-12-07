@@ -1,107 +1,85 @@
-.teacher-container {
-  padding: 20px;
-  max-width: 900px;
-  margin: 0 auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f7f6;
-  min-height: 100vh;
+import { useState } from 'react';
+import './TeacherDashboard.css';
+
+// App.tsx'ten gelen 'onLogout' fonksiyonunun tipini tanımlıyoruz
+interface TeacherDashboardProps {
+  onLogout: () => void;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  background: white;
-  padding: 15px 25px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+// Öğrenci veri tipi
+interface Student {
+  id: number;
+  name: string;
+  number: string;
+  status: 'present' | 'absent' | 'pending';
 }
 
-.dashboard-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #2c3e50;
-}
+const TeacherDashboard = ({ onLogout }: TeacherDashboardProps) => {
+  // Örnek veriler
+  const [students, setStudents] = useState<Student[]>([
+    { id: 1, name: "Ahmet Yılmaz", number: "2023001", status: 'pending' },
+    { id: 2, name: "Ayşe Demir", number: "2023002", status: 'pending' },
+    { id: 3, name: "Mehmet Çelik", number: "2023003", status: 'pending' },
+    { id: 4, name: "Zeynep Kaya", number: "2023004", status: 'pending' },
+    { id: 5, name: "Elif Öztürk", number: "2023005", status: 'pending' },
+  ]);
 
-.logout-btn {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-}
-.logout-btn:hover { background-color: #c0392b; }
+  const toggleStatus = (id: number, newStatus: 'present' | 'absent') => {
+    setStudents(prev => 
+      prev.map(student => 
+        student.id === id ? { ...student, status: newStatus } : student
+      )
+    );
+  };
 
-.attendance-card {
-  background: white;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
+  const handleSave = () => {
+    console.log("Kaydedilen Yoklama:", students);
+    alert("Yoklama başarıyla sisteme kaydedildi!");
+  };
 
-.attendance-table {
-  margin-top: 20px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
-}
+  return (
+    <div className="teacher-container">
+      {/* Üst Bar: Başlık ve Çıkış Butonu */}
+      <header className="dashboard-header">
+        <h1>Öğretmen Paneli</h1>
+        <button onClick={onLogout} className="logout-btn">Güvenli Çıkış</button>
+      </header>
+      
+      <div className="attendance-card">
+        <h3>Bugünkü Yoklama Listesi</h3>
+        <div className="attendance-table">
+          <div className="table-header">
+            <span>No</span>
+            <span>İsim Soyisim</span>
+            <span>Durum</span>
+          </div>
 
-.table-header {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1.5fr;
-  background: #3498db;
-  color: white;
-  padding: 15px;
-  font-weight: bold;
-}
+          {students.map((student) => (
+            <div key={student.id} className={`table-row ${student.status}`}>
+              <span>{student.number}</span>
+              <span>{student.name}</span>
+              <div className="actions">
+                <button 
+                  className={`btn check ${student.status === 'present' ? 'active' : ''}`}
+                  onClick={() => toggleStatus(student.id, 'present')}
+                >
+                  Var
+                </button>
+                <button 
+                  className={`btn cross ${student.status === 'absent' ? 'active' : ''}`}
+                  onClick={() => toggleStatus(student.id, 'absent')}
+                >
+                  Yok
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
 
-.table-row {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1.5fr;
-  padding: 12px 15px;
-  border-bottom: 1px solid #f1f1f1;
-  align-items: center;
-}
-.table-row:last-child { border-bottom: none; }
-.table-row:hover { background-color: #f9f9f9; }
+        <button className="save-btn" onClick={handleSave}>Yoklamayı Tamamla</button>
+      </div>
+    </div>
+  );
+};
 
-/* Duruma göre arka plan renklendirmesi (isteğe bağlı) */
-.table-row.present { border-left: 4px solid #2ecc71; }
-.table-row.absent { border-left: 4px solid #e74c3c; }
-
-.actions { display: flex; gap: 10px; }
-
-.btn {
-  padding: 8px 20px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: 600;
-  color: #7f8c8d;
-  transition: all 0.2s;
-}
-
-.btn.check:hover { background-color: #eafaf1; color: #2ecc71; border-color: #2ecc71; }
-.btn.cross:hover { background-color: #fdedec; color: #e74c3c; border-color: #e74c3c; }
-
-/* Aktif (seçili) buton stilleri */
-.btn.check.active { background-color: #2ecc71; color: white; border-color: #2ecc71; }
-.btn.cross.active { background-color: #e74c3c; color: white; border-color: #e74c3c; }
-
-.save-btn {
-  width: 100%;
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #2c3e50;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.save-btn:hover { background-color: #1a252f; }
+export default TeacherDashboard;
