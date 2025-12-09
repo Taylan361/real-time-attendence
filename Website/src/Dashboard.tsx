@@ -16,7 +16,7 @@ type ViewType = 'dashboard' | 'courses' | 'assignments' | 'grades' | 'calendar' 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [userName, setUserName] = useState('Student');
   const [activeView, setActiveView] = useState<ViewType>('dashboard'); 
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  // selectedCourseId state'ini sildik çünkü CourseDetails artık bunu kullanmıyor
 
   useEffect(() => {
     const savedLogin = localStorage.getItem('savedLogin');
@@ -29,8 +29,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   }, []);
 
-  const handleViewCourse = (courseName: string) => {
-    setSelectedCourseId(courseName);
+  const handleViewCourse = () => {
+    // courseName parametresini sildik çünkü kullanmıyoruz
     setActiveView('course-detail');
   };
 
@@ -86,8 +86,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard': return <DashboardOverview />;
+      
+      // onCourseSelect prop'u artık parametresiz bir fonksiyon bekliyor
       case 'courses': return <MyCourses onCourseSelect={handleViewCourse} />;
-      case 'course-detail': return <CourseDetails courseId={selectedCourseId} onBack={goBackToCourses} />;
+      
+      // CourseDetails artık courseId beklemiyor
+      case 'course-detail': return <CourseDetails onBack={goBackToCourses} />;
+      
       case 'assignments': return <MyAssignments onAssignmentSelect={handleViewAssignment} />;
       case 'assignment-detail': return <AssignmentDetails onBack={goBackToAssignments} />;
       case 'grades': return <MyGrades />;
