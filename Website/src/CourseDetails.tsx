@@ -2,11 +2,10 @@ import React from 'react';
 import './Dashboard.css';
 
 interface CourseDetailsProps {
-  courseId: string | null;
   onBack: () => void;
 }
 
-export const CourseDetails: React.FC<CourseDetailsProps> = ({ courseId, onBack }) => {
+export const CourseDetails: React.FC<CourseDetailsProps> = ({ onBack }) => {
   const courseData = {
     title: "Software Validation and Testing",
     code: "MATH 401",
