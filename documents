@@ -1,0 +1,19 @@
+# 📑 Project Documentation Overview
+
+This folder is dedicated to housing all essential documentation for the Jira-Based Attendance System project developed for the "Testing & Validation" course.
+
+## 📁 Content Focus
+This repository provides a comprehensive record of the project's journey, from initial concept to final validation. Specifically, it includes:
+
+* **Developed & Modified Files:** Core project documents that were created or substantially changed during the project execution.
+* **Design Artifacts (Dizaynlar):** High-level and detailed design specifications.
+* **System Diagrams (Diagramlar):** Visual representations of the system architecture, processes, and interactions.
+* **Requirement & Validation Reports (Raporlar):** Formal documents detailing requirements, test plans, test cases, and the final Verification & Validation (V&V) outcomes.
+
+## 📌 Key Documents Included
+
+* **Software Requirements Specification (SRS):** Defines what the system should do.
+* **System and Workflow Diagrams:** Visual maps of the Jira workflow, user scenarios (Use Cases), and data flow.
+* **Design Documents:** Specifications for Jira custom fields, screens, and automations.
+* **Test Plan & Test Cases:** Documents outlining the testing strategy and individual test steps.
+* **Validation Report:** The final report proving the system meets its specified requirements.
