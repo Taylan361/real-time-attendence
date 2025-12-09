@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css';
 
-// Resim Importları (Senin dosya yoluna göre aynı kalmalı)
 import logoImg from './assets/logo.jpg';
 import trFlag from './assets/tr.jpg';
 import enFlag from './assets/en.jpg';
 
-// --- ÇEVİRİ SÖZLÜĞÜ (AYNEN KORUNDU) ---
 const translations = {
   tr: {
     uniName: "MALTEPE ÜNİVERSİTESİ",
@@ -34,8 +32,6 @@ const translations = {
     registerBtn: "Kayıt Ol",
     studentRole: "Öğrenci",
     adminRole: "Akademisyen",
-    
-    // Header & About
     navHome: "Ana Sayfa",
     navAbout: "Proje Hakkında",
     aboutTitle: "Proje Detayları",
@@ -76,8 +72,6 @@ const translations = {
     registerBtn: "Register",
     studentRole: "Student",
     adminRole: "Instructor",
-
-    // Header & About
     navHome: "Home",
     navAbout: "About Project",
     aboutTitle: "Project Details",
@@ -98,9 +92,9 @@ type ViewState = 'selection' | 'student' | 'admin' | 'register' | 'about';
 type NotificationType = 'success' | 'error' | null;
 type LangType = 'tr' | 'en';
 
-// --- DEĞİŞİKLİK BURADA: App.tsx'in beklediği rol tipini tanımlıyoruz ---
+// GÜNCELLEME: onLoginSuccess artık bir rol (string) bekliyor
 interface LoginPageProps {
-  onLoginSuccess: (role: 'teacher' | 'student') => void;
+  onLoginSuccess: (role: 'student' | 'admin') => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -108,11 +102,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [notification, setNotification] = useState<{msg: string, type: NotificationType}>({ msg: '', type: null });
   const [lang, setLang] = useState<LangType>('tr'); 
   const t = translations[lang];
-
-  // Hamburger Menu State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Form Verileri
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -133,18 +124,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const showToast = (msg: string, type: 'success' | 'error', redirectRole?: 'teacher' | 'student') => {
     setNotification({ msg, type });
-    
-    // Eğer kayıt olduysa geri dön, eğer giriş yaptıysa Dashboard'u aç
     setTimeout(() => {
       setNotification({ msg: '', type: null });
-      if (type === 'success') {
-        if (view === 'register') {
-          goBack();
-        } 
-        // --- DEĞİŞİKLİK BURADA: Giriş başarılıysa rolü App.tsx'e gönder ---
-        else if ((view === 'student' || view === 'admin') && redirectRole) {
-           onLoginSuccess(redirectRole);
-        }
+      if (type === 'success' && view === 'register') {
+        goBack();
       }
     }, 1500); // 1.5 saniye bekleme
   };
@@ -161,7 +144,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // --- KAYIT OLMA ---
     if (view === 'register') {
       if (registerRole === 'admin' && adminSecret !== 'MALT2024') return showToast(lang === 'tr' ? 'Hatalı Kurum Kodu!' : 'Invalid Institution Code!', 'error');
       if (registerRole === 'student' && studentNumber.length !== 9) return showToast(lang === 'tr' ? 'Öğrenci numarası 9 haneli olmalı!' : 'Student ID must be 9 digits!', 'error');
@@ -173,10 +155,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       const newUser = { name, surname, email, studentNumber: registerRole === 'student' ? studentNumber : null, password, role: registerRole };
       localStorage.setItem(uniqueKey, JSON.stringify(newUser));
       showToast(lang === 'tr' ? 'Kayıt Başarılı! Yönlendiriliyorsunuz...' : 'Registration Successful! Redirecting...', 'success');
-    } 
-    
-    // --- GİRİŞ YAPMA ---
-    else {
+    } else {
       let searchKey = '';
       if (view === 'student') {
         if (!studentNumber) return showToast(lang === 'tr' ? 'Öğrenci No Gerekli' : 'ID Required', 'error');
@@ -192,7 +171,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       const user = JSON.parse(userRecord);
       if (user.password !== password) return showToast(lang === 'tr' ? 'Hatalı şifre!' : 'Wrong password!', 'error');
       
-      // Yetki Kontrolü
+      // Rol Kontrolleri
       if (view === 'admin' && user.role !== 'admin') return showToast(lang === 'tr' ? 'Bu alandan sadece Akademisyenler girebilir!' : 'Unauthorized Access!', 'error');
       if (view === 'student' && user.role !== 'student') return showToast(lang === 'tr' ? 'Lütfen akademisyen girişini kullanın.' : 'Please use instructor login.', 'error');
 
@@ -204,16 +183,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       if (rememberMe) localStorage.setItem('savedLogin', searchKey); 
       else localStorage.removeItem('savedLogin');
 
-      // Toast mesajını göster ve ardından yönlendirmeyi tetikle
-      showToast(
-          lang === 'tr' ? `Giriş Başarılı! Hoşgeldin ${user.name}` : `Login Successful! Welcome ${user.name}`, 
-          'success',
-          appRole // Bu rol showToast içinden onLoginSuccess'e gidecek
-      );
+      // ÖNEMLİ: Giriş yapan kullanıcının rolünü App.tsx'e gönderiyoruz
+      setTimeout(() => {
+        onLoginSuccess(user.role); 
+      }, 1000);
     }
   };
 
-  // --- COMPONENTLER (Aynen Korundu) ---
   const NotificationModal = () => (
     <div className="notification-overlay">
       <div className="notification-box">
@@ -227,28 +203,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const Header = () => {
     const currentLangData = { tr: { flag: trFlag, label: "Türkçe" }, en: { flag: enFlag, label: "English" } };
-
     return (
       <header className="app-header">
         <div className="header-left">
-          <img src={logoImg} alt="Maltepe Logo" className="header-logo" />
+          <img src={logoImg} alt="Logo" className="header-logo" />
           <div className="system-titles">
             <span className="uni-name">{t.uniName}</span>
             <span className="system-name">{t.sysName}</span>
           </div>
         </div>
-
-        {/* --- MASAÜSTÜ MENÜ (Mobilde Gizlenir) --- */}
         <div className="desktop-nav-area">
             <nav className="header-nav">
-                <button className={`nav-link ${view !== 'about' ? 'active' : ''}`} onClick={() => setView('selection')}>
-                    {t.navHome}
-                </button>
-                <button className={`nav-link ${view === 'about' ? 'active' : ''}`} onClick={() => setView('about')}>
-                    {t.navAbout}
-                </button>
+                <button className={`nav-link ${view !== 'about' ? 'active' : ''}`} onClick={() => setView('selection')}>{t.navHome}</button>
+                <button className={`nav-link ${view === 'about' ? 'active' : ''}`} onClick={() => setView('about')}>{t.navAbout}</button>
             </nav>
-
             <div className="language-dropdown">
               <div className="selected-lang">
                   <img src={currentLangData[lang].flag} alt="Flag" className="flag-icon" />
@@ -256,20 +224,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   <span className="arrow-icon">▼</span>
               </div>
               <div className="lang-menu">
-                  <div className="lang-option" onClick={() => setLang('tr')}>
-                    <img src={trFlag} alt="TR" className="flag-icon" /> <span>Türkçe</span>
-                  </div>
-                  <div className="lang-option" onClick={() => setLang('en')}>
-                    <img src={enFlag} alt="EN" className="flag-icon" /> <span>English</span>
-                  </div>
+                  <div className="lang-option" onClick={() => setLang('tr')}><img src={trFlag} alt="TR" className="flag-icon" /> <span>Türkçe</span></div>
+                  <div className="lang-option" onClick={() => setLang('en')}><img src={enFlag} alt="EN" className="flag-icon" /> <span>English</span></div>
               </div>
             </div>
         </div>
-
-        {/* --- HAMBURGER BUTTON (Sadece Mobilde Görünür) --- */}
         <button className="hamburger-btn" onClick={() => setIsMobileMenuOpen(true)}>☰</button>
-
-        {/* --- MOBİL MENÜ (Drawer) --- */}
         {isMobileMenuOpen && (
           <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)}>
             <div className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
@@ -277,25 +237,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                  <span style={{fontWeight: 'bold', color: '#4b2e83'}}>Menü</span>
                  <button className="close-btn" onClick={() => setIsMobileMenuOpen(false)}>✕</button>
               </div>
-
               <div className="mobile-nav-items">
-                <button className={`mobile-link ${view !== 'about' ? 'active' : ''}`} onClick={() => { setView('selection'); setIsMobileMenuOpen(false); }}>
-                  🏠 {t.navHome}
-                </button>
-                <button className={`mobile-link ${view === 'about' ? 'active' : ''}`} onClick={() => { setView('about'); setIsMobileMenuOpen(false); }}>
-                  ℹ️ {t.navAbout}
-                </button>
+                <button className={`mobile-link ${view !== 'about' ? 'active' : ''}`} onClick={() => { setView('selection'); setIsMobileMenuOpen(false); }}>🏠 {t.navHome}</button>
+                <button className={`mobile-link ${view === 'about' ? 'active' : ''}`} onClick={() => { setView('about'); setIsMobileMenuOpen(false); }}>ℹ️ {t.navAbout}</button>
               </div>
-
               <div className="mobile-lang-section">
                 <span className="mobile-lang-title">Dil Seçimi / Language</span>
                 <div className="mobile-flags">
-                   <button className={`mobile-flag-btn ${lang === 'tr' ? 'active' : ''}`} onClick={() => setLang('tr')}>
-                     <img src={trFlag} className="flag-icon" /> Türkçe
-                   </button>
-                   <button className={`mobile-flag-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}>
-                     <img src={enFlag} className="flag-icon" /> English
-                   </button>
+                   <button className={`mobile-flag-btn ${lang === 'tr' ? 'active' : ''}`} onClick={() => setLang('tr')}><img src={trFlag} className="flag-icon" /> Türkçe</button>
+                   <button className={`mobile-flag-btn ${lang === 'en' ? 'active' : ''}`} onClick={() => setLang('en')}><img src={enFlag} className="flag-icon" /> English</button>
                 </div>
               </div>
             </div>
@@ -310,21 +260,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       <div className="login-header"> <h2>{t.aboutTitle}</h2> <p>{t.aboutDesc}</p> </div>
       <div className="about-content">
         <div className="about-section"> <h3>📝 {t.sectOverview}</h3> <p>{t.txtOverview}</p> </div>
-        <div className="about-section"> <h3>🎯 {t.sectObjectives}</h3>
-            <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#555', lineHeight: '1.5' }}>
-                <li>{t.obj1}</li> <li>{t.obj2}</li> <li>{t.obj3}</li>
-            </ul>
-        </div>
-        <div className="about-section"> <h3>👥 {t.sectTeam}</h3>
-            <div className="team-list">
-                <span className="team-member">Burçak Çelt</span> <span className="team-member">Ecem Nur Özer</span>
-                <span className="team-member">Erdem Beler</span> <span className="team-member">Taylan Alp Çakı</span>
-            </div>
-        </div>
-        <div className="about-section"> <h3>⚙️ {t.sectTech}</h3>
-            <p style={{marginBottom: '10px'}}>{t.txtTech}</p>
-            <div className="tech-badges"> <span>Scrum</span> <span>Jira</span> <span>React</span> <span>AI Face Rec.</span> </div>
-        </div>
+        <div className="about-section"> <h3>🎯 {t.sectObjectives}</h3> <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#555', lineHeight: '1.5' }}><li>{t.obj1}</li> <li>{t.obj2}</li> <li>{t.obj3}</li></ul> </div>
+        <div className="about-section"> <h3>👥 {t.sectTeam}</h3> <div className="team-list"> <span className="team-member">Burçak Çelt</span> <span className="team-member">Ecem Nur Özer</span> <span className="team-member">Erdem Beler</span> <span className="team-member">Taylan Alp Çakı</span> </div> </div>
+        <div className="about-section"> <h3>⚙️ {t.sectTech}</h3> <p style={{marginBottom: '10px'}}>{t.txtTech}</p> <div className="tech-badges"> <span>Scrum</span> <span>Jira</span> <span>React</span> <span>AI Face Rec.</span> </div> </div>
       </div>
       <button className="back-button" onClick={() => setView('selection')} style={{marginTop: '1rem'}}>{t.back}</button>
     </>
