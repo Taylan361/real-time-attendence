@@ -122,14 +122,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   }, []);
 
-  const showToast = (msg: string, type: 'success' | 'error') => {
+  const showToast = (msg: string, type: 'success' | 'error', redirectRole?: 'teacher' | 'student') => {
     setNotification({ msg, type });
     setTimeout(() => {
       setNotification({ msg: '', type: null });
       if (type === 'success' && view === 'register') {
         goBack();
       }
-    }, 2000);
+    }, 1500); // 1.5 saniye bekleme
   };
 
   const clearForm = () => {
@@ -151,6 +151,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       const uniqueKey = registerRole === 'student' ? studentNumber : email;
       if (localStorage.getItem(uniqueKey)) return showToast(lang === 'tr' ? 'Kullanıcı zaten kayıtlı!' : 'User already registered!', 'error');
 
+      // Rolü burada 'admin' olarak kaydediyoruz, login olurken bunu 'teacher'a çevireceğiz.
       const newUser = { name, surname, email, studentNumber: registerRole === 'student' ? studentNumber : null, password, role: registerRole };
       localStorage.setItem(uniqueKey, JSON.stringify(newUser));
       showToast(lang === 'tr' ? 'Kayıt Başarılı! Yönlendiriliyorsunuz...' : 'Registration Successful! Redirecting...', 'success');
@@ -174,8 +175,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       if (view === 'admin' && user.role !== 'admin') return showToast(lang === 'tr' ? 'Bu alandan sadece Akademisyenler girebilir!' : 'Unauthorized Access!', 'error');
       if (view === 'student' && user.role !== 'student') return showToast(lang === 'tr' ? 'Lütfen akademisyen girişini kullanın.' : 'Please use instructor login.', 'error');
 
-      showToast(lang === 'tr' ? `Giriş Başarılı! Hoşgeldin ${user.name}` : `Login Successful! Welcome ${user.name}`, 'success');
-      
+      // --- KRİTİK DEĞİŞİKLİK ---
+      // Senin kodun 'admin' kullanıyor ama App.tsx 'teacher' bekliyor.
+      // Burada dönüşümü yapıyoruz:
+      const appRole = user.role === 'admin' ? 'teacher' : 'student';
+
       if (rememberMe) localStorage.setItem('savedLogin', searchKey); 
       else localStorage.removeItem('savedLogin');
 

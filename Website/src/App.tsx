@@ -10,6 +10,7 @@ function App() {
 
   useEffect(() => {
     const savedLogin = localStorage.getItem('savedLogin');
+    
     if (savedLogin) {
       const userRecord = localStorage.getItem(savedLogin);
       if (userRecord) {
@@ -25,6 +26,7 @@ function App() {
   const handleLoginSuccess = (role: 'student' | 'admin') => {
     setUserRole(role); // Gelen rolü state'e yaz
     setIsAuthenticated(true);
+    setUserRole(role);
   };
 
   const handleLogout = () => {
