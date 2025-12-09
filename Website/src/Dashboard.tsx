@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import './Dashboard.css';
-import { MyCourses } from './MyCourses'; // Derslerim sayfasını import ettik
+import { MyCourses } from './MyCourses';
 import { MyAssignments } from './MyAssignments';
 import { MyGrades } from './MyGrades';
 import { Calendar } from './Calendar';
+import { CourseDetails } from './CourseDetails'; // Yeni
+import { AssignmentDetails } from './AssignmentDetails'; // Yeni
 
-// Giriş yapan kullanıcının verilerini alacağız
 interface DashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'dashboard' | 'courses' | 'assignments' | 'grades' | 'calendar';
+// Görünüm tiplerine detay sayfalarını da ekledik
+type ViewType = 'dashboard' | 'courses' | 'assignments' | 'grades' | 'calendar' | 'course-detail' | 'assignment-detail';
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [userName, setUserName] = useState('Öğrenci');
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard'); // Varsayılan sekme
+  const [activeView, setActiveView] = useState<ViewType>('dashboard'); 
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
-  // Sayfa açılınca LocalStorage'dan ismi çekelim
   useEffect(() => {
     const savedLogin = localStorage.getItem('savedLogin');
     if (savedLogin) {
@@ -28,26 +30,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   }, []);
 
-  // --- MOCK DATA (Dashboard Ana Sayfa İçin) ---
-  const stats = [
-    { title: 'Kayıtlı Dersler', value: '6', icon: '📖', color: 'blue' },
-    { title: 'Tamamlanan', value: '12', icon: '✅', color: 'green' },
-    { title: 'Bekleyen Görev', value: '5', icon: '⏰', color: 'orange' },
-    { title: 'Genel Ort (GPA)', value: '2.8', icon: '🎖️', color: 'purple' },
-  ];
+  // --- NAVİGASYON FONKSİYONLARI ---
+  const handleViewCourse = (courseName: string) => {
+    setSelectedCourseId(courseName);
+    setActiveView('course-detail');
+  };
 
-  const assignments = [
-    { title: 'Testing Problem Set 5', course: 'Software Validation', date: '17 Kas, 2025', status: 'Bekliyor', statusColor: 'orange' },
-    { title: 'Team Project', course: 'Computer Science 101', date: '20 Kas, 2025', status: 'Sürüyor', statusColor: 'black' },
-    { title: 'Lab Report', course: 'CPU Lab', date: '22 Kas, 2025', status: 'Bekliyor', statusColor: 'orange' },
-  ];
+  const handleViewAssignment = () => {
+    setActiveView('assignment-detail');
+  };
 
-  const courses = [
-    { name: 'Software Validation and Testing', instructor: 'Dr. Burçak Çelt', grade: 'BB', progress: 68, color: '#4b2e83' },
-    { name: 'Database Management', instructor: 'Prof. Taylan Çakı', grade: 'AA', progress: 75, color: '#00C853' },
-    { name: 'Operating Systems', instructor: 'Dr. Erdem Beler', grade: 'CC', progress: 54, color: '#aa00ff' },
-    { name: 'Python Programming', instructor: 'Prof. Ecem Özer', grade: 'AA', progress: 82, color: '#ffab00' },
-  ];
+  const goBackToCourses = () => setActiveView('courses');
+  const goBackToAssignments = () => setActiveView('assignments');
 
   // --- DASHBOARD ANASAYFA İÇERİĞİ ---
   const DashboardOverview = () => (
@@ -58,68 +52,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       </div>
 
       <div className="stats-grid">
-        {stats.map((stat, index) => (
-          <div key={index} className="stat-card">
-            <div className="stat-info">
-              <span className="stat-title">{stat.title}</span>
-              <span className="stat-value">{stat.value}</span>
-            </div>
-            <div className={`stat-icon bg-${stat.color}`}>
-              {stat.icon}
-            </div>
-          </div>
-        ))}
+        <div className="stat-card"><div className="stat-info"><span className="stat-title">Kayıtlı Dersler</span><span className="stat-value">6</span></div><div className="stat-icon bg-blue">📖</div></div>
+        <div className="stat-card"><div className="stat-info"><span className="stat-title">Tamamlanan</span><span className="stat-value">12</span></div><div className="stat-icon bg-green">✅</div></div>
+        <div className="stat-card"><div className="stat-info"><span className="stat-title">Bekleyen Görev</span><span className="stat-value">5</span></div><div className="stat-icon bg-orange">⏰</div></div>
+        <div className="stat-card"><div className="stat-info"><span className="stat-title">Genel Ort (GPA)</span><span className="stat-value">2.8</span></div><div className="stat-icon bg-purple">🎖️</div></div>
       </div>
 
       <div className="content-grid">
-        {/* SOL: DERSLER LİSTESİ (KÜÇÜK) */}
+        {/* SOL: DERSLER ÖZET */}
         <div className="section-card">
             <h3>Derslerim</h3>
             <p className="subtitle">Bu dönem kayıtlı olduğun dersler</p>
-            
             <div className="course-list">
-              {courses.map((course, index) => (
-                <div key={index} className="course-item">
-                  <div className="course-border" style={{backgroundColor: course.color}}></div>
-                  <div className="course-details">
-                    <h4>{course.name}</h4>
-                    <span className="instructor">{course.instructor}</span>
-                    <div className="progress-bar-bg">
-                      <div className="progress-fill" style={{width: `${course.progress}%`, backgroundColor: course.color}}></div>
-                    </div>
-                    <span className="progress-text">İlerleme: %{course.progress}</span>
-                  </div>
-                  <div className="course-grade">
-                    {course.grade}
-                  </div>
-                </div>
-              ))}
+              <div className="course-item"><div className="course-border" style={{backgroundColor: '#4b2e83'}}></div><div className="course-details"><h4>Software Validation</h4><span className="instructor">Dr. Burçak Çelt</span><div className="progress-bar-bg"><div className="progress-fill" style={{width: '68%', backgroundColor: '#4b2e83'}}></div></div></div></div>
+              <div className="course-item"><div className="course-border" style={{backgroundColor: '#00C853'}}></div><div className="course-details"><h4>Database Management</h4><span className="instructor">Prof. Taylan Çakı</span><div className="progress-bar-bg"><div className="progress-fill" style={{width: '75%', backgroundColor: '#00C853'}}></div></div></div></div>
             </div>
+            {/* Bu butonu da çalışır hale getirdik */}
+            <button className="view-all" style={{marginTop:'15px', width:'100%'}} onClick={() => setActiveView('courses')}>Tüm Dersleri Gör</button>
         </div>
 
-        {/* SAĞ: ÖDEVLER LİSTESİ */}
+        {/* SAĞ: ÖDEVLER ÖZET */}
         <div className="section-card">
            <div className="card-header">
               <h3>Yaklaşan Ödevler</h3>
-              <button className="view-all" onClick={() => setActiveTab('assignments')}>Tümü</button>
+              <button className="view-all" onClick={() => setActiveView('assignments')}>Tümü</button>
             </div>
             <p className="subtitle">Teslim tarihi yaklaşanlar</p>
-
             <div className="assignment-list">
-              {assignments.map((task, index) => (
-                <div key={index} className="assignment-item">
-                  <div className="task-icon">📋</div>
-                  <div className="task-info">
-                    <h4>{task.title}</h4>
-                    <span>{task.course}</span>
-                    <div className="task-meta">
-                      🕒 {task.date} 
-                      <span className={`status-tag ${task.statusColor}`}>{task.status}</span>
-                    </div>
-                  </div>
-                  <button className="task-btn">Görüntüle</button>
-                </div>
-              ))}
+               {/* "Görüntüle" butonlarına onClick ekledik */}
+               <div className="assignment-item"><div className="task-icon">📋</div><div className="task-info"><h4>Testing Problem Set 5</h4><span>Software Validation</span></div><button className="task-btn" onClick={handleViewAssignment}>Görüntüle</button></div>
+               <div className="assignment-item"><div className="task-icon">📋</div><div className="task-info"><h4>Team Project</h4><span>CS 101</span></div><button className="task-btn" onClick={handleViewAssignment}>Görüntüle</button></div>
             </div>
         </div>
       </div>
@@ -128,10 +90,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   // --- İÇERİK YÖNETİCİSİ ---
   const renderContent = () => {
-    switch (activeTab) {
+    switch (activeView) {
       case 'dashboard': return <DashboardOverview />;
-      case 'courses': return <MyCourses />;
-      case 'assignments': return <MyAssignments />;
+      
+      // Listeler ve Detaylar Arası Geçiş
+      case 'courses': return <MyCourses onCourseSelect={handleViewCourse} />;
+      case 'course-detail': return <CourseDetails courseId={selectedCourseId} onBack={goBackToCourses} />;
+      
+      case 'assignments': return <MyAssignments onAssignmentSelect={handleViewAssignment} />;
+      case 'assignment-detail': return <AssignmentDetails onBack={goBackToAssignments} />;
+      
       case 'grades': return <MyGrades />;
       case 'calendar': return <Calendar />;
       default: return <DashboardOverview />;
@@ -140,7 +108,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="dashboard-layout">
-      {/* SOL SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-logo">
           <div className="logo-icon">🎓</div>
@@ -148,60 +115,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
         
         <nav className="sidebar-menu">
-          <div className={`menu-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-            <span className="icon">🏠</span> Dashboard
-          </div>
-          <div className={`menu-item ${activeTab === 'courses' ? 'active' : ''}`} onClick={() => setActiveTab('courses')}>
-            <span className="icon">📚</span> Derslerim
-          </div>
-          <div className={`menu-item ${activeTab === 'assignments' ? 'active' : ''}`} onClick={() => setActiveTab('assignments')}>
-            <span className="icon">📝</span> Ödevler
-          </div>
-          <div className={`menu-item ${activeTab === 'grades' ? 'active' : ''}`} onClick={() => setActiveTab('grades')}>
-            <span className="icon">📊</span> Notlar
-          </div>
-          <div className={`menu-item ${activeTab === 'calendar' ? 'active' : ''}`} onClick={() => setActiveTab('calendar')}>
-            <span className="icon">📅</span> Takvim
-          </div>
+          {/* Sidebar butonları sadece ana görünümlere gider */}
+          <div className={`menu-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}><span className="icon">🏠</span> Dashboard</div>
+          <div className={`menu-item ${activeView === 'courses' || activeView === 'course-detail' ? 'active' : ''}`} onClick={() => setActiveView('courses')}><span className="icon">📚</span> Derslerim</div>
+          <div className={`menu-item ${activeView === 'assignments' || activeView === 'assignment-detail' ? 'active' : ''}`} onClick={() => setActiveView('assignments')}><span className="icon">📝</span> Ödevler</div>
+          <div className={`menu-item ${activeView === 'grades' ? 'active' : ''}`} onClick={() => setActiveView('grades')}><span className="icon">📊</span> Notlar</div>
+          <div className={`menu-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}><span className="icon">📅</span> Takvim</div>
         </nav>
 
         <div className="sidebar-footer">
-          <button onClick={onLogout} className="logout-btn">
-            🚪 Çıkış Yap
-          </button>
+          <button onClick={onLogout} className="logout-btn">🚪 Çıkış Yap</button>
         </div>
       </aside>
 
-      {/* ANA İÇERİK ALANI */}
       <main className="main-content">
-        {/* HEADER */}
         <header className="top-header">
-          <div className="search-bar">
-            <span>🔍</span>
-            <input type="text" placeholder="Ders, ödev veya notlarda ara..." />
-          </div>
-          
+          <div className="search-bar"><span>🔍</span><input type="text" placeholder="Ders, ödev veya notlarda ara..." /></div>
           <div className="user-profile">
-            <div className="notification-icon">
-              🔔 <span className="badge">3</span>
-            </div>
-            
+            <div className="notification-icon">🔔 <span className="badge">3</span></div>
             <div className="user-info">
-              <div className="details">
-                <span className="u-name">{userName}</span>
-                <span className="u-role">Bilgisayar Müh.</span>
-              </div>
-              <div className="avatar">
-                {userName.charAt(0)}
-              </div>
+              <div className="details"><span className="u-name">{userName}</span><span className="u-role">Bilgisayar Müh.</span></div>
+              <div className="avatar">{userName.charAt(0)}</div>
             </div>
           </div>
         </header>
 
-        {/* DİNAMİK OLARAK DEĞİŞEN İÇERİK */}
         {renderContent()}
 
       </main>
     </div>
   );
+  
 };
