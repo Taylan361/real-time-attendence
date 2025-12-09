@@ -1,45 +1,86 @@
 import React, { useState } from 'react';
 import './Dashboard.css';
 
-// Yeni: Prop ekledik
 interface MyAssignmentsProps {
   onAssignmentSelect: () => void;
 }
 
+// Assignment Veri Tipi
+interface Assignment {
+  id: number;
+  title: string;
+  course: string;
+  desc: string;
+  dueDate: string;
+  points: string;
+  status: 'todo' | 'submitted' | 'graded';
+}
+
 export const MyAssignments: React.FC<MyAssignmentsProps> = ({ onAssignmentSelect }) => {
-  // Filtreleme için state'i kullanıyoruz
   const [activeTab, setActiveTab] = useState<'todo' | 'submitted' | 'graded'>('todo');
 
-  const allAssignments = [
-    { id: 1, title: 'Software Validation and Testing', courseTag: 'Software', desc: 'Complete problems 1-20 from Chapter 5', dueDate: '17 Kas, 2025', points: '100 puan', status: 'todo' },
-    { id: 2, title: 'Database Management', courseTag: 'CS 101', desc: 'Build a responsive web application', dueDate: '30 Kas, 2025', points: '150 puan', status: 'inprogress' }, // inprogress de todo sayılır
-    { id: 3, title: 'Operating Systems Report', courseTag: 'CPU Lab', desc: 'Write a detailed lab report', dueDate: '14 Kas, 2025', points: '80 puan', status: 'submitted' },
-    { id: 4, title: 'Python Basics Quiz', courseTag: 'FE', desc: 'Online quiz completion', dueDate: '10 Kas, 2025', points: '100/90', status: 'graded' }
+  // MOCK DATA (İngilizce - Direkt buraya yazdık)
+  const allAssignments: Assignment[] = [
+    { 
+      id: 1, 
+      title: 'Software Validation Problem Set', 
+      course: 'Software Validation', 
+      desc: 'Complete problems 1-20 from Chapter 5.', 
+      dueDate: 'Nov 17, 2025', 
+      points: '100 pts', 
+      status: 'todo' 
+    },
+    { 
+      id: 2, 
+      title: 'Database Project Phase 1', 
+      course: 'Database Management', 
+      desc: 'Design the ER diagram for the hospital system.', 
+      dueDate: 'Nov 30, 2025', 
+      points: '150 pts', 
+      status: 'todo' 
+    },
+    { 
+      id: 3, 
+      title: 'Operating Systems Lab Report', 
+      course: 'Operating Systems', 
+      desc: 'Write a detailed report on the scheduling algorithm experiment.', 
+      dueDate: 'Nov 14, 2025', 
+      points: '80 pts', 
+      status: 'submitted' 
+    },
+    { 
+      id: 4, 
+      title: 'Python Basics Quiz', 
+      course: 'Python Programming', 
+      desc: 'Online quiz completion.', 
+      dueDate: 'Nov 10, 2025', 
+      points: '90/100', 
+      status: 'graded' 
+    }
   ];
 
   // Filtreleme Mantığı
   const filteredAssignments = allAssignments.filter(item => {
-    if (activeTab === 'todo') return item.status === 'todo' || item.status === 'inprogress';
+    if (activeTab === 'todo') return item.status === 'todo';
     return item.status === activeTab;
   });
 
   return (
     <div className="assignments-page fade-in">
       <div className="page-header">
-        <h2>Ödevlerim</h2>
-        <p>Ders ödevlerini görüntüle ve gönder</p>
+        <h2>My Assignments</h2>
+        <p>View and submit course assignments</p>
       </div>
 
-      {/* SEKMELER ARTIK ÇALIŞIYOR */}
       <div className="tabs-wrapper">
         <button className={`tab-item ${activeTab === 'todo' ? 'active' : ''}`} onClick={() => setActiveTab('todo')}>
-          Yapılacaklar
+          To Do
         </button>
         <button className={`tab-item ${activeTab === 'submitted' ? 'active' : ''}`} onClick={() => setActiveTab('submitted')}>
-          Teslim Edilenler
+          Submitted
         </button>
         <button className={`tab-item ${activeTab === 'graded' ? 'active' : ''}`} onClick={() => setActiveTab('graded')}>
-          Notlandırılanlar
+          Graded
         </button>
       </div>
 
@@ -51,26 +92,24 @@ export const MyAssignments: React.FC<MyAssignmentsProps> = ({ onAssignmentSelect
               <div className="card-content">
                 <div className="card-header-row">
                   <h3>{item.title}</h3>
-                  <span className="course-badge">{item.courseTag}</span>
-                  {item.status === 'inprogress' && <span className="status-badge">Devam Ediyor</span>}
+                  <span className="course-badge">{item.course}</span>
                 </div>
                 <p className="card-desc">{item.desc}</p>
                 <div className="card-meta">
-                  <span className="meta-date">📅 Teslim: {item.dueDate}</span>
+                  <span className="meta-date">📅 Due: {item.dueDate}</span>
                   <span className="meta-points">🏆 {item.points}</span>
                 </div>
               </div>
               <div className="card-actions">
-                {/* BUTONLAR ARTIK FONKSİYONLU */}
-                <button className="btn-details" onClick={onAssignmentSelect}>Detaylar</button>
+                <button className="btn-details" onClick={onAssignmentSelect}>Details</button>
                 {activeTab === 'todo' && (
-                   <button className="btn-submit" onClick={onAssignmentSelect}>Teslim Et</button>
+                   <button className="btn-submit" onClick={onAssignmentSelect}>Submit</button>
                 )}
               </div>
             </div>
           ))
         ) : (
-          <div style={{textAlign:'center', padding:'20px', color:'#999'}}>Bu kategoride ödev bulunmuyor.</div>
+          <div style={{textAlign:'center', padding:'20px', color:'#999'}}>No assignments found in this category.</div>
         )}
       </div>
     </div>

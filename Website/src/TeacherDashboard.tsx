@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import { TeacherCalendar } from './TeacherCalendar';
-import { TeacherCourses } from './TeacherCourses'; // YENİ: Import ettik
+import { TeacherCourses } from './TeacherCourses';
 
 interface TeacherDashboardProps {
   onLogout: () => void;
@@ -13,10 +13,11 @@ interface Student {
   status: 'present' | 'absent' | 'late';
 }
 
+// MOCK DATABASE (Keys kept same for consistency, but you can translate names if needed)
 const COURSES_DB: Record<string, { code: string; time: string; students: Student[] }> = {
   'Software Validation': {
     code: 'MATH 401',
-    time: 'Sal/Per 14:00',
+    time: 'Tue/Thu 14:00',
     students: [
       { id: 2024006, name: 'Öykü Şahin', status: 'absent' },
       { id: 2024007, name: 'Kaan Gündüz', status: 'present' },
@@ -26,7 +27,7 @@ const COURSES_DB: Record<string, { code: string; time: string; students: Student
   },
   'Database Management': {
     code: 'CS 101',
-    time: 'Pzt/Çar 10:00',
+    time: 'Mon/Wed 10:00',
     students: [
       { id: 2024010, name: 'Hasan Yanık', status: 'present' },
       { id: 2024011, name: 'Ali Yılmaz', status: 'present' },
@@ -37,7 +38,7 @@ const COURSES_DB: Record<string, { code: string; time: string; students: Student
   },
   'Operating Systems': {
     code: 'CS 302',
-    time: 'Cuma 09:00',
+    time: 'Fri 09:00',
     students: [
       { id: 2024020, name: 'Ahmet Yılmaz', status: 'present' },
       { id: 2024021, name: 'Burak Can', status: 'late' },
@@ -47,7 +48,6 @@ const COURSES_DB: Record<string, { code: string; time: string; students: Student
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) => {
   
-  // GÜNCELLEME: activeView tipi genişletildi
   const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'courses'>('dashboard');
   
   const [showAnnounceModal, setShowAnnounceModal] = useState(false);
@@ -71,43 +71,52 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
   };
 
   const markAllPresent = () => { setStudents(prev => prev.map(s => ({ ...s, status: 'present' }))); };
-  const handleSaveAnnouncement = () => { setShowAnnounceModal(false); alert("Duyuru başarıyla yayınlandı! (Demo)"); };
-  const handleSaveAssignment = () => { setShowAssignModal(false); alert("Ödev öğrencilere gönderildi! (Demo)"); };
+  
+  // Demo Messages in English
+  const handleSaveAnnouncement = () => { setShowAnnounceModal(false); alert("Announcement posted successfully! (Demo)"); };
+  const handleSaveAssignment = () => { setShowAssignModal(false); alert("Assignment created successfully! (Demo)"); };
 
-  // --- İÇERİK RENDER (Dashboard Ana Sayfası) ---
+  const handleCourseSelection = (courseName: string) => {
+    setSelectedCourseKey(courseName);
+    setActiveView('dashboard');
+  };
+
+  // --- DASHBOARD CONTENT ---
   const renderDashboardContent = () => (
     <div className="fade-in">
+      {/* HEADER & COURSE SELECTOR */}
       <div className="teacher-blue-header" style={{ marginBottom: '25px' }}>
         <div className="blue-header-content">
           <h3>{selectedCourseKey}</h3>
           <div className="blue-tags">
             <span className="blue-tag">{COURSES_DB[selectedCourseKey].code}</span>
             <span className="blue-tag">{COURSES_DB[selectedCourseKey].time}</span>
-            <span className="blue-tag">{totalStudents} Öğrenci Kayıtlı</span>
+            <span className="blue-tag">{totalStudents} Students</span>
           </div>
         </div>
         <div className="course-selector-wrapper">
-            <label style={{color:'white', fontSize:'0.8rem', display:'block', marginBottom:'5px', opacity:0.8}}>Aktif Ders:</label>
+            <label style={{color:'white', fontSize:'0.8rem', display:'block', marginBottom:'5px', opacity:0.8}}>Active Session:</label>
             <select className="header-course-select" value={selectedCourseKey} onChange={(e) => setSelectedCourseKey(e.target.value)}>
               {Object.keys(COURSES_DB).map(courseName => (<option key={courseName} value={courseName}>{courseName}</option>))}
             </select>
         </div>
       </div>
 
+      {/* ATTENDANCE SECTION */}
       <div className="section-card">
         <div className="card-header">
-          <h3>Yoklama Kontrolü</h3>
+          <h3>Attendance Control</h3>
           <div className="header-actions">
-            <button className="secondary-btn" onClick={markAllPresent}>Tümünü Var Yaz</button>
-            <button className="primary-black-btn">▶ Oturumu Başlat</button>
+            <button className="secondary-btn" onClick={markAllPresent}>Mark All Present</button>
+            <button className="primary-black-btn">▶ Start Session</button>
           </div>
         </div>
         <div className="attendance-stats">
-          <div className="att-box total"><span>👥 Toplam</span><strong>{totalStudents}</strong></div>
-          <div className="att-box present"><span>✅ Mevcut</span><strong>{presentCount}</strong></div>
-          <div className="att-box absent"><span>❌ Yok</span><strong>{absentCount}</strong></div>
-          <div className="att-box late"><span>⏰ Geç</span><strong>{lateCount}</strong></div>
-          <div className="att-box rate"><span>📊 Oran</span><strong>%{attendanceRate}</strong></div>
+          <div className="att-box total"><span>👥 Total</span><strong>{totalStudents}</strong></div>
+          <div className="att-box present"><span>✅ Present</span><strong>{presentCount}</strong></div>
+          <div className="att-box absent"><span>❌ Absent</span><strong>{absentCount}</strong></div>
+          <div className="att-box late"><span>⏰ Late</span><strong>{lateCount}</strong></div>
+          <div className="att-box rate"><span>📊 Rate</span><strong>%{attendanceRate}</strong></div>
         </div>
         <div className="student-list">
           {students.map((student) => (
@@ -119,45 +128,36 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
                 <div><strong>{student.name}</strong><span style={{display:'block', fontSize:'0.8rem', color:'#888'}}>{student.id}</span></div>
               </div>
               <div className="attendance-actions-group">
-                <button className={`status-btn present ${student.status === 'present' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'present')}>Mevcut</button>
-                <button className={`status-btn absent ${student.status === 'absent' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'absent')}>Yok</button>
-                <button className={`status-btn late ${student.status === 'late' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'late')}>Geç</button>
+                <button className={`status-btn present ${student.status === 'present' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'present')}>Present</button>
+                <button className={`status-btn absent ${student.status === 'absent' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'absent')}>Absent</button>
+                <button className={`status-btn late ${student.status === 'late' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'late')}>Late</button>
               </div>
             </div>
           ))}
         </div>
       </div>
 
+      {/* ANNOUNCEMENTS & ASSIGNMENTS */}
       <div className="content-grid" style={{marginTop: '25px'}}>
         <div className="section-card">
-          <div className="card-header"><h3>Duyurular</h3><span className="icon-btn">📢</span></div>
-          <button className="full-width-black-btn" onClick={() => setShowAnnounceModal(true)}>+ Duyuru Oluştur</button>
-          <div className="announcement-item"><div className="ann-badge high">Yüksek</div><h4>Vize Sınav Takvimi</h4><p>Vize sınavı 25 Kasım saat 09:00'da yapılacaktır.</p></div>
+          <div className="card-header"><h3>Announcements</h3><span className="icon-btn">📢</span></div>
+          <button className="full-width-black-btn" onClick={() => setShowAnnounceModal(true)}>+ New Announcement</button>
+          <div className="announcement-item"><div className="ann-badge high">High Priority</div><h4>Midterm Exam Schedule</h4><p>The midterm exam will be held on Nov 25th at 09:00.</p></div>
         </div>
         <div className="section-card">
-          <div className="card-header"><h3>Ödev Yönetimi</h3><span className="icon-btn">📝</span></div>
-          <button className="full-width-black-btn" onClick={() => setShowAssignModal(true)}>+ Yeni Ödev Ekle</button>
-          <div className="teacher-assignment-item"><h4>Unit Testing Lab Exercise</h4><div className="progress-bar-bg"><div className="progress-fill" style={{width: '100%', backgroundColor: 'black'}}></div></div><div style={{display:'flex', justifyContent:'space-between', fontSize:'0.8rem', marginTop:'5px'}}><span>Teslim: 10/42</span><span style={{color:'green', fontWeight:'bold'}}>Aktif</span></div></div>
+          <div className="card-header"><h3>Assignments</h3><span className="icon-btn">📝</span></div>
+          <button className="full-width-black-btn" onClick={() => setShowAssignModal(true)}>+ Create Assignment</button>
+          <div className="teacher-assignment-item"><h4>Unit Testing Lab Exercise</h4><div className="progress-bar-bg"><div className="progress-fill" style={{width: '100%', backgroundColor: 'black'}}></div></div><div style={{display:'flex', justifyContent:'space-between', fontSize:'0.8rem', marginTop:'5px'}}><span>Submitted: 10/42</span><span style={{color:'green', fontWeight:'bold'}}>Active</span></div></div>
         </div>
       </div>
     </div>
   );
 
-  // YENİ FONKSİYON: Dersi seçip Dashboard'a atar
-  const handleCourseSelection = (courseName: string) => {
-    setSelectedCourseKey(courseName); // 1. O dersi seçili yap
-    setActiveView('dashboard');       // 2. Ana ekrana (Dashboard) dön
-  };
-
-  // --- ANA RENDER ---
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard': return renderDashboardContent();
       case 'calendar': return <TeacherCalendar />;
-      
-      // GÜNCELLEME: Prop'u buraya ekledik
       case 'courses': return <TeacherCourses onSelectCourse={handleCourseSelection} />;
-      
       default: return renderDashboardContent();
     }
   };
@@ -171,36 +171,35 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
           <div className={`menu-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>
             <span className="icon">🏠</span> Dashboard
           </div>
-          {/* ARTIK ÇALIŞIYOR */}
           <div className={`menu-item ${activeView === 'courses' ? 'active' : ''}`} onClick={() => setActiveView('courses')}>
-            <span className="icon">📘</span> Derslerim
+            <span className="icon">📘</span> My Courses
           </div>
           <div className={`menu-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}>
-            <span className="icon">📅</span> Takvim
+            <span className="icon">📅</span> Calendar
           </div>
         </nav>
         
         <div className="sidebar-footer">
-          <button onClick={onLogout} className="logout-btn">🚪 Çıkış Yap</button>
+          <button onClick={onLogout} className="logout-btn">🚪 Logout</button>
         </div>
       </aside>
 
       <main className="main-content">
         <header className="top-header">
-          <div className="page-title-group"><h2>Akademisyen Paneli</h2><p>Derslerinizi ve yoklamayı buradan yönetin</p></div>
-          <div className="user-profile"><div className="notification-icon">🔔</div><div className="user-info"><div className="details"><span className="u-name">Dr. Burçak Çelt</span><span className="u-role">Akademisyen</span></div><div className="avatar">B</div></div></div>
+          <div className="page-title-group"><h2>Instructor Portal</h2><p>Manage your courses and student attendance</p></div>
+          <div className="user-profile"><div className="notification-icon">🔔</div><div className="user-info"><div className="details"><span className="u-name">Dr. Burçak Çelt</span><span className="u-role">Instructor</span></div><div className="avatar">B</div></div></div>
         </header>
 
         {renderContent()}
 
-        {/* MODALLAR */}
+        {/* MODALS */}
         {showAnnounceModal && (
           <div className="modal-overlay">
             <div className="modal-content">
-              <h3>📢 Yeni Duyuru Yayınla</h3>
-              <div className="form-group"><label>Başlık</label><input type="text" className="modal-input" placeholder="Örn: Sınav Tarihleri" /></div>
-              <div className="form-group"><label>İçerik</label><textarea className="modal-input" rows={4} placeholder="Duyuru detaylarını buraya yazın..."></textarea></div>
-              <div className="modal-actions"><button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>İptal</button><button className="primary-black-btn" onClick={handleSaveAnnouncement}>Yayınla</button></div>
+              <h3>📢 Post Announcement</h3>
+              <div className="form-group"><label>Title</label><input type="text" className="modal-input" placeholder="e.g. Exam Dates" /></div>
+              <div className="form-group"><label>Content</label><textarea className="modal-input" rows={4} placeholder="Write details here..."></textarea></div>
+              <div className="modal-actions"><button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>Cancel</button><button className="primary-black-btn" onClick={handleSaveAnnouncement}>Post</button></div>
             </div>
           </div>
         )}
@@ -208,10 +207,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
         {showAssignModal && (
           <div className="modal-overlay">
             <div className="modal-content">
-              <h3>📝 Yeni Ödev Ekle</h3>
-              <div className="form-group"><label>Ödev Başlığı</label><input type="text" className="modal-input" placeholder="Örn: Final Projesi Raporu" /></div>
-              <div className="form-group"><label>Son Teslim Tarihi</label><input type="date" className="modal-input" /></div>
-              <div className="modal-actions"><button className="secondary-btn" onClick={() => setShowAssignModal(false)}>İptal</button><button className="primary-black-btn" onClick={handleSaveAssignment}>Ödevi Oluştur</button></div>
+              <h3>📝 Create Assignment</h3>
+              <div className="form-group"><label>Title</label><input type="text" className="modal-input" placeholder="e.g. Final Project Report" /></div>
+              <div className="form-group"><label>Due Date</label><input type="date" className="modal-input" /></div>
+              <div className="modal-actions"><button className="secondary-btn" onClick={() => setShowAssignModal(false)}>Cancel</button><button className="primary-black-btn" onClick={handleSaveAssignment}>Create</button></div>
             </div>
           </div>
         )}

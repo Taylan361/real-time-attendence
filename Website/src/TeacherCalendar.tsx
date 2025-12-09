@@ -2,47 +2,46 @@ import React, { useState } from 'react';
 import './Dashboard.css';
 
 export const TeacherCalendar: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<number>(18); // Varsayılan gün
+  const [selectedDate, setSelectedDate] = useState<number>(18);
 
   const calendarDays = Array.from({ length: 30 }, (_, i) => i + 1);
 
-  // MOCK DATA: ÖĞRETMEN PROGRAMI
   const events = [
     {
       id: 1,
-      title: 'Software Validation (Ders)',
-      type: 'class', // Stil dosyasında .class rengi mor
+      title: 'Software Validation (Class)',
+      type: 'class',
       time: '10:00 - 11:30',
-      location: 'Bilim Binası, Oda 204',
+      location: 'Science Bldg, Room 204',
       day: 18
     },
     {
       id: 2,
-      title: 'Bölüm Toplantısı',
-      type: 'deadline', // Stil dosyasında .deadline rengi turuncu (Toplantı için kullanalım)
+      title: 'Department Meeting',
+      type: 'deadline',
       time: '14:00 - 15:00',
-      location: 'Toplantı Salonu A',
+      location: 'Meeting Room A',
       day: 18
     },
     {
       id: 3,
-      title: 'Operating Systems (Ders)',
+      title: 'Operating Systems (Class)',
       type: 'class',
       time: '13:00 - 15:00',
-      location: 'Fizik Lab, Oda 101',
+      location: 'Physics Lab, Room 101',
       day: 19
     },
     {
       id: 4,
-      title: 'Ofis Saati (Öğrenci Görüşmeleri)',
-      type: 'exam', // Stil dosyasında .exam rengi kırmızı/pembe
+      title: 'Office Hours',
+      type: 'exam',
       time: '15:30 - 16:30',
-      location: 'Ofis 302',
+      location: 'Office 302',
       day: 19
     },
     {
       id: 5,
-      title: 'Vize Sorularını Hazırla',
+      title: 'Prepare Midterm Qs',
       type: 'deadline',
       time: '17:00',
       location: '-',
@@ -54,21 +53,16 @@ export const TeacherCalendar: React.FC = () => {
 
   return (
     <div className="calendar-page fade-in">
-      <div className="section-card" style={{marginBottom: '20px', border:'none', boxShadow:'none', padding:'0', background:'transparent'}}>
-         {/* Başlık kısmını kaldırdık çünkü Dashboard header zaten var, direkt içeriği basıyoruz */}
-      </div>
+      <div className="section-card" style={{marginBottom: '20px', border:'none', boxShadow:'none', padding:'0', background:'transparent'}}></div>
 
       <div className="calendar-layout">
-        {/* SOL: TAKVİM */}
         <div className="calendar-card">
           <div className="calendar-header">
-            <h3>Kasım 2025</h3>
-            <div className="calendar-nav">
-              <button>‹</button><button>›</button>
-            </div>
+            <h3>November 2025</h3>
+            <div className="calendar-nav"><button>‹</button><button>›</button></div>
           </div>
           <div className="calendar-weekdays">
-            <span>Pzt</span><span>Sal</span><span>Çar</span><span>Per</span><span>Cum</span><span>Cmt</span><span>Paz</span>
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
           </div>
           <div className="calendar-grid">
             <span className="empty-day"></span><span className="empty-day"></span><span className="empty-day"></span><span className="empty-day"></span>
@@ -85,11 +79,10 @@ export const TeacherCalendar: React.FC = () => {
           </div>
         </div>
 
-        {/* SAĞ: AJANDA */}
         <div className="agenda-card">
           <div className="agenda-header">
-            <h3>{selectedDate} Kasım</h3>
-            <span className="event-count">{todaysEvents.length} Etkinlik</span>
+            <h3>November {selectedDate}</h3>
+            <span className="event-count">{todaysEvents.length} Events</span>
           </div>
           <div className="agenda-list">
             {todaysEvents.length > 0 ? (
@@ -106,7 +99,7 @@ export const TeacherCalendar: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="no-events"><span className="chill-icon">☕</span><p>Programınız boş.</p></div>
+              <div className="no-events"><span className="chill-icon">☕</span><p>No events scheduled.</p></div>
             )}
           </div>
         </div>
