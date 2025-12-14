@@ -1,4 +1,4 @@
-🎓 Real Time Attendence
+🎓 UniPortal - Learning Management System
 UniPortal is a modern, responsive Learning Management System (LMS) designed to streamline the academic experience for Maltepe University. Built with React and TypeScript, it bridges the gap between students and instructors by providing real-time data, intuitive course management, and automated attendance tracking.
 
 This platform focuses on user experience, offering distinct, specialized interfaces for both Students and Instructors to manage their daily academic tasks efficiently.
@@ -35,11 +35,13 @@ Styling: Custom CSS (Responsive Design)
 
 State Management: React Hooks
 
-🎨 Design & Interface
-The application features a clean, card-based UI with distinct color-coding for status updates (e.g., Green for success/present, Red for absent/overdue). It is fully responsive, ensuring a seamless experience across desktop and mobile devices.
+👥 Development Team
+This project was developed by:
 
-Developers: 
 Taylan Alp Çakı
+
 Erdem Beler
+
 Ecem Nur Özer
+
 Burçak Çelt
