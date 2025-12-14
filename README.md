@@ -10,28 +10,27 @@ This platform focuses on user experience, offering distinct, specialized interfa
 
 ### 👨‍🎓 Student Portal
 
-  * **Interactive Dashboard:** A comprehensive overview of enrolled courses, pending tasks, GPA, and weekly progress.
-  * **Course Management:** Detailed views for syllabus tracking, course materials download, and progress monitoring.
-  * **Assignment System:** Filterable lists for upcoming, submitted, and graded assignments with submission capabilities.
-  * **Gradebook:** Visual breakdown of exam scores, letter grades, and semester averages.
-  * **Calendar:** Integrated schedule for classes, exams, and deadlines.
+* **Interactive Dashboard:** A comprehensive overview of enrolled courses, pending tasks, GPA, and weekly progress.
+* **Course Management:** Detailed views for syllabus tracking, course materials download, and progress monitoring.
+* **Assignment System:** Filterable lists for upcoming, submitted, and graded assignments with submission capabilities.
+* **Gradebook:** Visual breakdown of exam scores, letter grades, and semester averages.
+* **Calendar:** Integrated schedule for classes, exams, and deadlines.
 
 ### 👨‍🏫 Instructor Portal
 
-  * **Real-Time Attendance:** An interactive system to mark students as Present, Absent, or Late with live statistics.
-  * **Course Administration:** Tools to manage course content, upload materials, and view student rosters.
-  * **Class Analytics:** Visual data regarding class participation rates and attendance trends.
-  * **Communication:** Tools to post announcements and manage assignment deadlines.
+* **Real-Time Attendance:** An interactive system to mark students as Present, Absent, or Late with live statistics.
+* **Course Administration:** Tools to manage course content, upload materials, and view student rosters.
+* **Class Analytics:** Visual data regarding class participation rates and attendance trends.
+* **Communication:** Tools to post announcements and manage assignment deadlines.
 
 ## 🛠 Technologies Used
 
-  * **Frontend:** React 18
-  * **Language:** TypeScript
-  * **Build Tool:** Vite
-  * **Styling:** Custom CSS (Responsive Design)
-  * **State Management:** React Hooks
-  * **Data Persistence:** LocalStorage (Mock Backend)
-
+* **Frontend:** React 18
+* **Language:** TypeScript
+* **Build Tool:** Vite
+* **Styling:** Custom CSS (Responsive Design)
+* **State Management:** React Hooks
+* **Data Persistence:** LocalStorage (Mock Backend)
 
 ## 🔐 Demo Login Information
 
@@ -39,39 +38,49 @@ You can use the **Live Demo** link above or your local version to test. Since th
 
 **For Instructor Access:**
 
-1.  Go to the "Register" page.
-2.  Select **"Instructor"** role.
-3.  Use the Institution Code: **`MALT2024`**
+1. Go to the "Register" page.
+2. Select **"Instructor"** role.
+3. Use the Institution Code: **`MALT2024`**
 
 **For Student Access:**
 
-1.  Go to the "Register" page.
-2.  Select **"Student"** role.
-3.  Enter a 9-digit Student ID.
-<table align="center">
+1. Go to the "Register" page.
+2. Select **"Student"** role.
+3. Enter a 9-digit Student ID.
+
+## 📸 Interface Gallery
+
+<table width="100%">
   <tr>
-    <td align="center">
+    <td width="50%" align="center">
       <a href="https://ibb.co/twJ9KCHj">
-        <img src="https://i.ibb.co/XfCqLJW0/Ekran-goruntusu-2025-12-14-165034.png" alt="Ekran-1" width="400">
+        <img src="https://i.ibb.co/XfCqLJW0/Ekran-goruntusu-2025-12-14-165034.png" width="100%" alt="Instructor Dashboard">
       </a>
+      <br />
+      <sub>Instructor Dashboard & Stats</sub>
     </td>
-    <td align="center">
+    <td width="50%" align="center">
       <a href="https://ibb.co/rKqhTCbP">
-        <img src="https://i.ibb.co/4wCL96sy/Ekran-goruntusu-2025-12-14-165056.png" alt="Ekran-2" width="400">
+        <img src="https://i.ibb.co/4wCL96sy/Ekran-goruntusu-2025-12-14-165056.png" width="100%" alt="Course Details">
       </a>
+      <br />
+      <sub>Course Details & Syllabus</sub>
     </td>
   </tr>
-
   <tr>
-    <td align="center">
+    <td width="50%" align="center">
       <a href="https://ibb.co/cc6gt34P">
-        <img src="https://i.ibb.co/N69VpCcX/Ekran-goruntusu-2025-12-14-165140.png" alt="Ekran-3" width="400">
+        <img src="https://i.ibb.co/N69VpCcX/Ekran-goruntusu-2025-12-14-165140.png" width="100%" alt="Student Dashboard">
       </a>
+      <br />
+      <sub>Student Dashboard Overview</sub>
     </td>
-    <td align="center">
+    <td width="50%" align="center">
       <a href="https://ibb.co/GfP0xmMk">
-        <img src="https://i.ibb.co/6csmnQtb/loginpage.png" alt="Login-Page" width="400">
+        <img src="https://i.ibb.co/6csmnQtb/loginpage.png" width="100%" alt="Login Page">
       </a>
+      <br />
+      <sub>Secure Login Portal</sub>
     </td>
   </tr>
 </table>
@@ -80,7 +89,7 @@ You can use the **Live Demo** link above or your local version to test. Since th
 
 This project was developed by:
 
-  * **Taylan Alp Çakı**
-  * **Erdem Beler**
-  * **Ecem Nur Özer**
-  * **Burçak Çelt**
+* **Taylan Alp Çakı**
+* **Erdem Beler**
+* **Ecem Nur Özer**
+* **Burçak Çelt**
