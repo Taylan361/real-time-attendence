@@ -82,8 +82,6 @@ You can use the **Live Demo** link above or your local version to test. Since th
       <br />
       <sub>Instructor Portal</sub>
     </td>
-    
-    </td>
   </tr>
 </table>
 
