@@ -50,6 +50,9 @@ You can use the **Live Demo** link above or your local version to test. Since th
 3.  Enter a 9-digit Student ID.
 <p align="center">
  <a href="https://ibb.co/twJ9KCHj"><img src="https://i.ibb.co/XfCqLJW0/Ekran-goruntusu-2025-12-14-165034.png" alt="Ekran-goruntusu-2025-12-14-165034" border="0"></a>
+ <a href="https://ibb.co/rKqhTCbP"><img src="https://i.ibb.co/4wCL96sy/Ekran-goruntusu-2025-12-14-165056.png" alt="Ekran-goruntusu-2025-12-14-165056" border="0"></a>
+ <a href="https://ibb.co/cc6gt34P"><img src="https://i.ibb.co/N69VpCcX/Ekran-goruntusu-2025-12-14-165140.png" alt="Ekran-goruntusu-2025-12-14-165140" border="0"></a>
+ <a href="https://ibb.co/GfP0xmMk"><img src="https://i.ibb.co/6csmnQtb/loginpage.png" alt="loginpage" border="0"></a>
 </p>
 
 ## 👥 Development Team
