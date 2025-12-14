@@ -49,7 +49,7 @@ You can use the **Live Demo** link above or your local version to test. Since th
 2.  Select **"Student"** role.
 3.  Enter a 9-digit Student ID.
 
-
+![Uygulama Ana Ekranı](https://ibb.co/twJ9KCHj)
 
 ## 👥 Development Team
 
