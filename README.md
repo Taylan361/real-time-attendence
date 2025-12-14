@@ -49,6 +49,35 @@ You can use the **Live Demo** link above or your local version to test. Since th
 2.  Select **"Student"** role.
 3.  Enter a 9-digit Student ID.
 
+## 📸 Interface Gallery
+
+<table width="100%">
+  <tr>
+    <td width="50%">
+      <h3 align="center">Instructor Dashboard</h3>
+      <img src="src/assets/dashboard.png" width="100%" alt="Instructor Dashboard">
+      <p align="center"><i>Comprehensive overview of active courses and sessions.</i></p>
+    </td>
+    <td width="50%">
+      <h3 align="center">Live Attendance Control</h3>
+      <img src="src/assets/attendance.png" width="100%" alt="Attendance Control">
+      <p align="center"><i>Real-time tracking with one-click status updates.</i></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3 align="center">Login Interface</h3>
+      <img src="src/assets/loginpage.png" width="100%" alt="Login Page">
+      <p align="center"><i>Secure entry point for students and instructors.</i></p>
+    </td>
+    <td width="50%">
+      <h3 align="center">Student Registration</h3>
+      <img src="src/assets/register.png" width="100%" alt="Registration Page">
+      <p align="center"><i>Easy registration process for new users.</i></p>
+    </td>
+  </tr>
+</table>
+
 ## 👥 Development Team
 
 This project was developed by:
