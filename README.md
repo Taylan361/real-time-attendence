@@ -53,27 +53,27 @@ You can use the **Live Demo** link above or your local version to test. Since th
 
 <table width="100%">
   <tr>
-    <td width="50%">
-      <h3 align="center">Instructor Dashboard</h3>
-      <img src="src/assets/dashboard.png" width="100%" alt="Instructor Dashboard">
-      <p align="center"><i>Comprehensive overview of active courses and sessions.</i></p>
+    <td width="50%" style="text-align: center;">
+      <h3>Instructor Dashboard</h3>
+      <img src="/real-time-attendence/Website/src/assets/dashboard.png" width="100%" alt="Instructor Dashboard">
+      <p><i>Comprehensive overview of active courses and sessions.</i></p>
     </td>
-    <td width="50%">
-      <h3 align="center">Live Attendance Control</h3>
-      <img src="src/assets/attendance.png" width="100%" alt="Attendance Control">
-      <p align="center"><i>Real-time tracking with one-click status updates.</i></p>
+    <td width="50%" style="text-align: center;">
+      <h3>Live Attendance Control</h3>
+      <img src="/real-time-attendence/Website/src/assets/attendance.png" width="100%" alt="Attendance Control">
+      <p><i>Real-time tracking with one-click status updates.</i></p>
     </td>
   </tr>
   <tr>
-    <td width="50%">
-      <h3 align="center">Login Interface</h3>
-      <img src="src/assets/loginpage.png" width="100%" alt="Login Page">
-      <p align="center"><i>Secure entry point for students and instructors.</i></p>
+    <td width="50%" style="text-align: center;">
+      <h3>Login Interface</h3>
+      <img src="/real-time-attendence/Website/src/assets/loginpage.png" width="100%" alt="Login Page">
+      <p><i>Secure entry point for students and instructors.</i></p>
     </td>
-    <td width="50%">
-      <h3 align="center">Student Registration</h3>
+    <td width="50%" style="text-align: center;">
+      <h3>Student Registration</h3>
       <img src="/real-time-attendence/Website/src/assets/register.png" width="100%" alt="Registration Page">
-      <p align="center"><i>Easy registration process for new users.</i></p>
+      <p><i>Easy registration process for new users.</i></p>
     </td>
   </tr>
 </table>
