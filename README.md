@@ -1,99 +1,75 @@
+# 🎓 ,Real Time Attendence
 
+**UniPortal** is a modern, responsive Learning Management System (LMS) designed to streamline the academic experience for Maltepe University. Built with **React** and **TypeScript**, it bridges the gap between students and instructors by providing real-time data, intuitive course management, and automated attendance tracking.
 
+This platform focuses on user experience, offering distinct, specialized interfaces for both Students and Instructors to manage their daily academic tasks efficiently.
 
-# 🎓 UniPortal | Maltepe University Real-Time Attendance & LMS
+## 🚀 Key Features
 
-## 🌟 Project Introduction
+### 👨‍🎓 Student Portal
 
-**UniPortal** is a web application prototype developed for the **Maltepe University Computer Engineering Department**. It is designed to bridge the gap between students and instructors by providing a centralized platform for daily course management, assignment tracking, and **real-time attendance monitoring**.
+  * **Interactive Dashboard:** A comprehensive overview of enrolled courses, pending tasks, GPA, and weekly progress.
+  * **Course Management:** Detailed views for syllabus tracking, course materials download, and progress monitoring.
+  * **Assignment System:** Filterable lists for upcoming, submitted, and graded assignments with submission capabilities.
+  * **Gradebook:** Visual breakdown of exam scores, letter grades, and semester averages.
+  * **Calendar:** Integrated schedule for classes, exams, and deadlines.
 
-The application focuses on a modern user experience (UX), offering distinct and specialized interfaces for both students and academicians.
+### 👨‍🏫 Instructor Portal
 
-## ✨ Key Features
+  * **Real-Time Attendance:** An interactive system to mark students as Present, Absent, or Late with live statistics.
+  * **Course Administration:** Tools to manage course content, upload materials, and view student rosters.
+  * **Class Analytics:** Visual data regarding class participation rates and attendance trends.
+  * **Communication:** Tools to post announcements and manage assignment deadlines.
 
-The system offers two customized interfaces based on the user role:
+## 🛠 Technologies Used
 
-### 🎓 Student Dashboard
+  * **Frontend:** React 18
+  * **Language:** TypeScript
+  * **Build Tool:** Vite
+  * **Styling:** Custom CSS (Responsive Design)
+  * **State Management:** React Hooks
+  * **Data Persistence:** LocalStorage (Mock Backend)
 
-  * **My Courses:** View details of enrolled courses, instructor information, and progress tracking.
-  * **Assignment Management:** Track assignments through tabs for Pending, Submitted, and Graded tasks.
-  * **Gradebook:** Monitor Midterm, Final, and Project grades with weighted averages.
-  * **Smart Calendar:** A personalized schedule view containing class times, exams, and assignment deadlines.
+## 📦 Installation & Setup
 
-### 👨‍🏫 Instructor Dashboard
+To run this project locally, follow these steps:
 
-  * **Real-Time Attendance:** View the student roster for a selected course and mark attendance instantly (Present, Absent, Late).
-  * **Announcements:** Publish urgent or general announcements specific to a class.
-  * **Assignment Tracking:** Monitor submission statistics and grade statuses for assigned tasks.
-
-## 💻 Technologies Used
-
-The project is built using the **React ecosystem** to ensure a fast and responsive user experience.
-
-| Category | Technology | Description |
-| :--- | :--- | :--- |
-| **Frontend** | React (v18) | Core library for building UI components and managing state. |
-| **Language** | TypeScript (TSX) | A typed superset of JavaScript for safer and scalable code. |
-| **Styling** | Vanilla CSS | Custom, responsive CSS for a clean UI/UX without heavy frameworks. |
-| **Data Management** | Mock Data | Internal data structures to simulate backend responses for prototyping. |
-| **Authentication** | `localStorage` | Browser-based temporary storage for user roles and registration data. |
-
-## 🚀 Installation and Setup
-
-Follow these steps to run the project on your local machine:
-
-### Prerequisites
-
-  * [Node.js](https://nodejs.org/en) (LTS version recommended)
-  * [npm](https://www.npmjs.com/)
-
-### Steps
-
-1.  **Clone the Repository:**
+1.  **Clone the repository:**
 
     ```bash
     git clone https://github.com/Taylan361/real-time-attendence.git
-    ```
-
-2.  **Navigate to the Project Directory:**
-    *Note: The source code is located in the `Website` folder.*
-
-    ```bash
     cd real-time-attendence/Website
     ```
 
-3.  **Install Dependencies:**
+2.  **Install dependencies:**
 
     ```bash
     npm install
     ```
 
-4.  **Start the Application:**
+3.  **Run the development server:**
 
     ```bash
     npm run dev
     ```
 
-The application will typically launch automatically at `http://localhost:5173`.
+4.  Open your browser and navigate to `http://localhost:5173`.
 
-## 🔑 Demo Login & Registration
+## 🔐 Demo Login Information
 
-Since the system uses **LocalStorage**, you will need to **Register** first to create the accounts. Use the details below to test different roles:
+Since the system runs on **LocalStorage**, you can register new users to test the roles:
 
-### 1\. Instructor Registration (Admin)
+**For Instructor Access:**
 
-To access the Instructor Panel, you must use the **Institution Code**.
+1.  Go to the "Register" page.
+2.  Select **"Instructor"** role.
+3.  Use the Institution Code: **`MALT2024`**
 
-  * **Role Selection:** Instructor
-  * **Institution Code:** `MALT2024`
-  * **Email:** `admin@maltepe.edu.tr` (Example)
+**For Student Access:**
 
-### 2\. Student Registration
-
-  * **Role Selection:** Student
-  * **Student ID:** Enter any 9-digit number (e.g., `220706010`)
-
------
+1.  Go to the "Register" page.
+2.  Select **"Student"** role.
+3.  Enter a 9-digit Student ID.
 
 ## 👥 Development Team
 
