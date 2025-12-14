@@ -1,5 +1,3 @@
-,
-
 # 🎓 UniPortal | Real-Time Attendance System
 
 > **🟢 Live Demo:** [https://real-time-attendence.vercel.app](https://real-time-attendence.vercel.app)
