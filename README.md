@@ -48,8 +48,9 @@ You can use the **Live Demo** link above or your local version to test. Since th
 1.  Go to the "Register" page.
 2.  Select **"Student"** role.
 3.  Enter a 9-digit Student ID.
-
-![Uygulama Ana Ekranı](https://ibb.co/twJ9KCHj)
+<p align="center">
+ <a href="https://ibb.co/twJ9KCHj"><img src="https://i.ibb.co/XfCqLJW0/Ekran-goruntusu-2025-12-14-165034.png" alt="Ekran-goruntusu-2025-12-14-165034" border="0"></a>
+</p>
 
 ## 👥 Development Team
 
