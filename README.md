@@ -57,21 +57,21 @@ You can use the **Live Demo** link above or your local version to test. Since th
         <img src="https://i.ibb.co/6csmnQtb/loginpage.png" width="100%" alt="Login Page">
       </a>
       <br />
-      <sub>Login Page</sub>
+      <sub>Login Portal</sub>
     </td>
     <td width="50%" align="center">
       <a href="https://ibb.co/twJ9KCHj">
         <img src="https://i.ibb.co/XfCqLJW0/Ekran-goruntusu-2025-12-14-165034.png" width="100%" alt="Instructor Dashboard">
       </a>
       <br />
-      <sub>Register</sub>
+      <sub>Instructor Dashboard & Stats</sub>
     </td>
     <td width="50%" align="center">
       <a href="https://ibb.co/rKqhTCbP">
         <img src="https://i.ibb.co/4wCL96sy/Ekran-goruntusu-2025-12-14-165056.png" width="100%" alt="Course Details">
       </a>
       <br />
-      <sub>Student Dashboard Overview</sub>
+      <sub>Course Details & Syllabus</sub>
     </td>
   </tr>
   <tr>
@@ -80,7 +80,7 @@ You can use the **Live Demo** link above or your local version to test. Since th
         <img src="https://i.ibb.co/N69VpCcX/Ekran-goruntusu-2025-12-14-165140.png" width="100%" alt="Student Dashboard">
       </a>
       <br />
-      <sub>Instructor Portal</sub>
+      <sub>Student Dashboard Overview</sub>
     </td>
     
   </tr>
