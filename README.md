@@ -35,6 +35,48 @@ Styling: Custom CSS (Responsive Design)
 
 State Management: React Hooks
 
+Data Persistence: LocalStorage (Mock Backend)
+
+📦 Installation & Setup
+To run this project locally, follow these steps:
+
+Clone the repository:
+
+Bash
+
+git clone https://github.com/Taylan361/real-time-attendence.git
+cd real-time-attendence/Website
+Install dependencies:
+
+Bash
+
+npm install
+Run the development server:
+
+Bash
+
+npm run dev
+Open your browser and navigate to http://localhost:5173.
+
+🔐 Demo Login Information
+Since the system runs on LocalStorage, you can register new users to test the roles:
+
+For Instructor Access:
+
+Go to the "Register" page.
+
+Select "Instructor" role.
+
+Use the Institution Code: MALT2024
+
+For Student Access:
+
+Go to the "Register" page.
+
+Select "Student" role.
+
+Enter a 9-digit Student ID.
+
 👥 Development Team
 This project was developed by:
 
