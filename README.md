@@ -1,79 +1,105 @@
-# Maltepe Üniversitesi | Gerçek Zamanlı Yoklama ve Öğrenci Yönetim Sistemi (M.Ü. GYÖS)
 
-## 🌟 Proje Tanıtımı
 
-Bu proje, Maltepe Üniversitesi Bilgisayar Mühendisliği Bölümü için geliştirilmiş, öğrenci ve akademisyenlerin günlük ders/ödev yönetimini ve **gerçek zamanlı yoklama takibini** sağlayan bir web uygulaması prototipidir.
 
-Uygulama, modern bir arayüz ile öğrenci ve akademisyen deneyimini merkezine alarak tasarlanmıştır.
+# 🎓 UniPortal | Maltepe University Real-Time Attendance & LMS
 
-## ✨ Temel Özellikler
+## 🌟 Project Introduction
 
-### 🎓 Öğrenci Paneli (Student Dashboard)
-* **Derslerim:** Kayıtlı olunan derslerin detaylarını, eğitmen bilgilerini ve ilerleme durumlarını görüntüleme.
-* **Ödev Yönetimi:** Yapılacak, teslim edilmiş ve notlandırılmış ödevleri sekmeler halinde takip etme.
-* **Notlarım:** Her derse ait vize, final ve ödev notlarının ağırlıklarıyla birlikte izlenmesi.
-* **Takvim:** Ders, sınav ve ödev teslim tarihlerini içeren kişiselleştirilmiş takvim görünümü.
+**UniPortal** is a web application prototype developed for the **Maltepe University Computer Engineering Department**. It is designed to bridge the gap between students and instructors by providing a centralized platform for daily course management, assignment tracking, and **real-time attendance monitoring**.
 
-### 👨‍🏫 Akademisyen Paneli (Instructor Dashboard)
-* **Gerçek Zamanlı Yoklama:** Seçilen derse ait öğrenci listesini görüntüleme ve anlık olarak yoklama alma (Present, Absent, Late).
-* **Duyuru Oluşturma:** Öğrencilere özel duyurular yayımlama ve aciliyet seviyesi belirleme.
-* **Ödev Takibi:** Derse ait ödevlerin teslim istatistiklerini izleme.
+The application focuses on a modern user experience (UX), offering distinct and specialized interfaces for both students and academicians.
 
-## 💻 Kullanılan Teknolojiler
+## ✨ Key Features
 
-Proje, modern ve hızlı bir kullanıcı deneyimi sunmak için React ekosistemi kullanılarak geliştirilmiştir.
+The system offers two customized interfaces based on the user role:
 
-| Kategori | Teknoloji | Açıklama |
+### 🎓 Student Dashboard
+
+  * **My Courses:** View details of enrolled courses, instructor information, and progress tracking.
+  * **Assignment Management:** Track assignments through tabs for Pending, Submitted, and Graded tasks.
+  * **Gradebook:** Monitor Midterm, Final, and Project grades with weighted averages.
+  * **Smart Calendar:** A personalized schedule view containing class times, exams, and assignment deadlines.
+
+### 👨‍🏫 Instructor Dashboard
+
+  * **Real-Time Attendance:** View the student roster for a selected course and mark attendance instantly (Present, Absent, Late).
+  * **Announcements:** Publish urgent or general announcements specific to a class.
+  * **Assignment Tracking:** Monitor submission statistics and grade statuses for assigned tasks.
+
+## 💻 Technologies Used
+
+The project is built using the **React ecosystem** to ensure a fast and responsive user experience.
+
+| Category | Technology | Description |
 | :--- | :--- | :--- |
-| **Ön Yüz (Frontend)** | React (TypeScript) | Kullanıcı arayüzü bileşenleri ve state yönetimi için temel kütüphane. |
-| **Dil** | TypeScript (TSX) | Daha güvenli ve ölçeklenebilir kod yazmak için JavaScript'in tip tabanlı üst kümesi. |
-| **Stil** | CSS / Vanilla CSS | Özelleştirilmiş ve temiz bir UI/UX için saf CSS kullanımı. |
-| **Veri Yönetimi** | Mock Data (Sahte Veri) | Demo amaçlı olarak verilerin dışa bağımlı olmadan React bileşenleri içinde tutulması. |
-| **Kimlik Doğrulama** | `localStorage` | Giriş bilgilerinin (Kullanıcı Rolü) tarayıcıda geçici olarak saklanması. |
+| **Frontend** | React (v18) | Core library for building UI components and managing state. |
+| **Language** | TypeScript (TSX) | A typed superset of JavaScript for safer and scalable code. |
+| **Styling** | Vanilla CSS | Custom, responsive CSS for a clean UI/UX without heavy frameworks. |
+| **Data Management** | Mock Data | Internal data structures to simulate backend responses for prototyping. |
+| **Authentication** | `localStorage` | Browser-based temporary storage for user roles and registration data. |
 
-## 🚀 Kurulum ve Çalıştırma
+## 🚀 Installation and Setup
 
-Projeyi yerel makinenizde çalıştırmak için aşağıdaki adımları takip edin:
+Follow these steps to run the project on your local machine:
 
-### Ön Gereksinimler
+### Prerequisites
 
-* [Node.js](https://nodejs.org/en) (tercihen LTS sürümü)
-* [npm](https://www.npmjs.com/) veya [Yarn](https://yarnpkg.com/)
+  * [Node.js](https://nodejs.org/en) (LTS version recommended)
+  * [npm](https://www.npmjs.com/)
 
-### Adımlar
+### Steps
 
-1.  **Depoyu Klonlayın:**
+1.  **Clone the Repository:**
+
     ```bash
-    git clone [REPO_ADRESİNİZİ_BURAYA_EKLEYİN]
-    cd [PROJE_KLASÖRÜ_ADI]
+    git clone https://github.com/Taylan361/real-time-attendence.git
     ```
 
-2.  **Bağımlılıkları Yükleyin:**
+2.  **Navigate to the Project Directory:**
+    *Note: The source code is located in the `Website` folder.*
+
+    ```bash
+    cd real-time-attendence/Website
+    ```
+
+3.  **Install Dependencies:**
+
     ```bash
     npm install
-    # veya
-    yarn install
     ```
 
-3.  **Projeyi Başlatın:**
+4.  **Start the Application:**
+
     ```bash
     npm run dev
-    # veya
-    yarn dev
     ```
 
-Proje, genellikle `http://localhost:5173` adresinde otomatik olarak açılacaktır.
+The application will typically launch automatically at `http://localhost:5173`.
 
-## 🔑 Demo Giriş Bilgileri
+## 🔑 Demo Login & Registration
 
-Uygulamayı test etmek için aşağıdaki sahte kullanıcıları kullanabilirsiniz. (Giriş yapmadan önce, *Kayıt Ol* ekranında bu kullanıcıları oluşturmanız gerekebilir.)
+Since the system uses **LocalStorage**, you will need to **Register** first to create the accounts. Use the details below to test different roles:
 
-| Rol | Kullanıcı Adı / No | Şifre |
-| :--- | :--- | :--- |
-| **Öğrenci** | 220706010 | 123456 |
-| **Akademisyen** | taylan.caki@maltepe.edu.tr | 123456 |
+### 1\. Instructor Registration (Admin)
 
-## ✍️ Katkıda Bulunanlar
+To access the Instructor Panel, you must use the **Institution Code**.
 
-* [Adınız Soyadınız / GitHub Kullanıcı Adınız]
-* [Arkadaşınızın Adı Soyadı / GitHub Kullanıcı Adı]
+  * **Role Selection:** Instructor
+  * **Institution Code:** `MALT2024`
+  * **Email:** `admin@maltepe.edu.tr` (Example)
+
+### 2\. Student Registration
+
+  * **Role Selection:** Student
+  * **Student ID:** Enter any 9-digit number (e.g., `220706010`)
+
+-----
+
+## 👥 Development Team
+
+This project was developed by:
+
+  * **Taylan Alp Çakı**
+  * **Erdem Beler**
+  * **Ecem Nur Özer**
+  * **Burçak Çelt**
