@@ -1,4 +1,8 @@
-# 🎓 ,Real Time Attendence
+,
+
+# 🎓 UniPortal | Real-Time Attendance System
+
+> **🟢 Live Demo:** [https://real-time-attendence.vercel.app](https://real-time-attendence.vercel.app)
 
 **UniPortal** is a modern, responsive Learning Management System (LMS) designed to streamline the academic experience for Maltepe University. Built with **React** and **TypeScript**, it bridges the gap between students and instructors by providing real-time data, intuitive course management, and automated attendance tracking.
 
@@ -30,34 +34,10 @@ This platform focuses on user experience, offering distinct, specialized interfa
   * **State Management:** React Hooks
   * **Data Persistence:** LocalStorage (Mock Backend)
 
-## 📦 Installation & Setup
-
-To run this project locally, follow these steps:
-
-1.  **Clone the repository:**
-
-    ```bash
-    git clone https://github.com/Taylan361/real-time-attendence.git
-    cd real-time-attendence/Website
-    ```
-
-2.  **Install dependencies:**
-
-    ```bash
-    npm install
-    ```
-
-3.  **Run the development server:**
-
-    ```bash
-    npm run dev
-    ```
-
-4.  Open your browser and navigate to `http://localhost:5173`.
 
 ## 🔐 Demo Login Information
 
-Since the system runs on **LocalStorage**, you can register new users to test the roles:
+You can use the **Live Demo** link above or your local version to test. Since the system runs on **LocalStorage**, you need to register new users to test the roles:
 
 **For Instructor Access:**
 
