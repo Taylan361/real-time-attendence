@@ -1,9 +1,13 @@
-// src/MyCourses.tsx - Güncel Hali
-
 import React from 'react';
 import './Dashboard.css';
 
-export const MyCourses: React.FC = () => {
+// Dashboard ile iletişim kuracak fonksiyon (Parametresiz)
+interface MyCoursesProps {
+  onCourseSelect: () => void;
+}
+
+export const MyCourses: React.FC<MyCoursesProps> = ({ onCourseSelect }) => {
+  // MOCK DATA: Ders Listesi
   const courses = [
     {
       code: 'MATH 401',
@@ -56,15 +60,19 @@ export const MyCourses: React.FC = () => {
   ];
 
   return (
-    <div className="courses-container">
+    <div className="courses-container fade-in">
+      {/* SAYFA BAŞLIĞI */}
       <div className="page-header">
         <h2>Derslerim</h2>
         <p>2025 Güz döneminde kayıtlı olduğun dersler</p>
       </div>
 
+      {/* DERS KARTLARI GRİDİ */}
       <div className="courses-grid-large">
         {courses.map((course, index) => (
           <div key={index} className="course-card-large">
+            
+            {/* Kart Başlığı ve İkon */}
             <div className="course-card-header">
               <div className="course-title-group">
                 <div className="course-icon-large" style={{ backgroundColor: course.color }}>
@@ -72,12 +80,15 @@ export const MyCourses: React.FC = () => {
                 </div>
                 <div>
                   <h3>{course.name}</h3>
-                  <span className="course-code">{course.code}</span>
+                  <span style={{color: '#a0aec0', fontSize: '0.85rem', fontWeight: '600'}}>
+                    {course.code}
+                  </span>
                 </div>
               </div>
               <span className="grade-badge">{course.grade}</span>
             </div>
 
+            {/* Ders Bilgileri */}
             <div className="course-info-grid">
               <div className="info-row">
                 <span>👤</span> {course.instructor}
@@ -90,13 +101,13 @@ export const MyCourses: React.FC = () => {
               </div>
             </div>
 
+            {/* İlerleme Çubuğu */}
             <div className="course-progress-section">
               <div className="progress-labels">
                 <span>Ders İlerlemesi</span>
                 <span>%{course.progress}</span>
               </div>
               <div className="progress-bg">
-                {/* Buradaki background rengini siyah yaptık (style içinden) */}
                 <div 
                   className="progress-fill" 
                   style={{ width: `${course.progress}%`, backgroundColor: '#1a1a1a' }} 
@@ -104,18 +115,22 @@ export const MyCourses: React.FC = () => {
               </div>
             </div>
 
-            <div className="course-footer-info">
-              <div className="footer-item">
+            {/* Alt Bilgi */}
+            <div className="course-footer-info" style={{display:'flex', justifyContent:'space-between', paddingBottom:'15px', borderBottom:'1px solid #f0f0f0'}}>
+              <div style={{display:'flex', flexDirection:'column'}}>
                 <small>Sıradaki Ders:</small>
                 <strong>{course.nextClass}</strong>
               </div>
-              <div className="footer-item">
+              <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end'}}>
                 <small>Materyaller:</small>
                 <strong>{course.files} dosya</strong>
               </div>
             </div>
 
-            <button className="view-details-btn">Ders Detaylarını Gör</button>
+            {/* Detay Butonu */}
+            <button className="view-details-btn" onClick={onCourseSelect}>
+              Ders Detaylarını Gör
+            </button>
           </div>
         ))}
       </div>

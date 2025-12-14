@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css';
 
+// Resim Importları
 import logoImg from './assets/logo.jpg';
 import trFlag from './assets/tr.jpg';
 import enFlag from './assets/en.jpg';
@@ -92,7 +93,6 @@ type ViewState = 'selection' | 'student' | 'admin' | 'register' | 'about';
 type NotificationType = 'success' | 'error' | null;
 type LangType = 'tr' | 'en';
 
-// GÜNCELLEME: onLoginSuccess artık bir rol (string) bekliyor
 interface LoginPageProps {
   onLoginSuccess: (role: 'student' | 'admin') => void;
 }
@@ -170,7 +170,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       const user = JSON.parse(userRecord);
       if (user.password !== password) return showToast(lang === 'tr' ? 'Hatalı şifre!' : 'Wrong password!', 'error');
       
-      // Rol Kontrolleri
       if (view === 'admin' && user.role !== 'admin') return showToast(lang === 'tr' ? 'Bu alandan sadece Akademisyenler girebilir!' : 'Unauthorized Access!', 'error');
       if (view === 'student' && user.role !== 'student') return showToast(lang === 'tr' ? 'Lütfen akademisyen girişini kullanın.' : 'Please use instructor login.', 'error');
 
@@ -179,7 +178,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       if (rememberMe) localStorage.setItem('savedLogin', searchKey); 
       else localStorage.removeItem('savedLogin');
 
-      // ÖNEMLİ: Giriş yapan kullanıcının rolünü App.tsx'e gönderiyoruz
+      // Gereksiz değişkenleri kaldırdık, direkt kullanıyoruz
       setTimeout(() => {
         onLoginSuccess(user.role); 
       }, 1000);
