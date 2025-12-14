@@ -49,34 +49,7 @@ You can use the **Live Demo** link above or your local version to test. Since th
 2.  Select **"Student"** role.
 3.  Enter a 9-digit Student ID.
 
-## 📸 Interface Gallery
 
-<table width="100%">
-  <tr>
-    <td width="50%" style="text-align: center;">
-      <h3>Instructor Dashboard</h3>
-      <img src="https://hizliresim.com/ot6aitg" width="100%" alt="Instructor Dashboard">
-      <p><i>Comprehensive overview of active courses and sessions.</i></p>
-    </td>
-    <td width="50%" style="text-align: center;">
-      <h3>Live Attendance Control</h3>
-      <img src="https://hizliresim.com/2m9qkqr" width="100%" alt="Attendance Control">
-      <p><i>Real-time tracking with one-click status updates.</i></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" style="text-align: center;">
-      <h3>Login Interface</h3>
-      <img src="https://hizliresim.com/31hmwjl" width="100%" alt="Login Page">
-      <p><i>Secure entry point for students and instructors.</i></p>
-    </td>
-    <td width="50%" style="text-align: center;">
-      <h3>Student Registration</h3>
-      <img src="https://hizliresim.com/mgb0gib" width="100%" alt="Registration Page">
-      <p><i>Easy registration process for new users.</i></p>
-    </td>
-  </tr>
-</table>
 
 ## 👥 Development Team
 
