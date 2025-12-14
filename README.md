@@ -72,7 +72,7 @@ You can use the **Live Demo** link above or your local version to test. Since th
     </td>
     <td width="50%">
       <h3 align="center">Student Registration</h3>
-      <img src="src/assets/register.png" width="100%" alt="Registration Page">
+      <img src="/real-time-attendence/Website/src/assets/register.png" width="100%" alt="Registration Page">
       <p align="center"><i>Easy registration process for new users.</i></p>
     </td>
   </tr>
