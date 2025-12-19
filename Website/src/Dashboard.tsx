@@ -6,11 +6,19 @@ import { MyGrades } from './MyGrades';
 import { Calendar } from './Calendar';
 import { CourseDetails } from './CourseDetails';
 import { AssignmentDetails } from './AssignmentDetails';
-// getAnnouncementsByCourses fonksiyonunu import ettik
-import { getStudentData, type Student, getAnnouncementsByCourses, type Announcement } from './DataManager';
+// fetchAssignmentsFromFirebase EKLENDİ
+import { getStudentData, type Student, getAnnouncementsByCourses, type Announcement, fetchAssignmentsFromFirebase } from './DataManager';
 
 interface DashboardProps {
   onLogout: () => void;
+}
+
+// Ödev Tipi Tanımlaması
+interface Assignment {
+  id: string;
+  title: string;
+  courseCode: string;
+  dueDate: string;
 }
 
 type ViewType = 'dashboard' | 'courses' | 'assignments' | 'grades' | 'calendar' | 'course-detail' | 'assignment-detail';
@@ -21,11 +29,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
   
   const [studentInfo, setStudentInfo] = useState<Student | null>(null);
-  // YENİ: Duyuruları tutacak state
   const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
-
+  // YENİ: Ödevleri tutacak state
+  const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
+// Seçilen ödevi hafızada tutmak için:
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   useEffect(() => {
-    // 1. İsim Çekme
+    // 1. İsim Çekme (Local Storage)
     const savedLogin = localStorage.getItem('savedLogin');
     if (savedLogin) {
       const userRecord = localStorage.getItem(savedLogin);
@@ -35,9 +45,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       }
     }
 
-    // 2. ÖĞRENCİ VERİSİNİ VE DUYURULARI ÇEKME
+    // 2. VERİLERİ ÇEKME (Firebase)
     const fetchData = async () => {
-      // Login ekranından kaydedilen ID'yi alıyoruz (yoksa default: 220706010)
       const currentStudentId = localStorage.getItem('currentStudentId') || '220706010';
       
       const data = await getStudentData(currentStudentId);
@@ -46,10 +55,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setStudentInfo(data);
         if (data.name) setUserName(data.name);
 
-        // Öğrencinin dersleri varsa, o derslerin duyurularını çek
+        // Öğrencinin dersleri varsa işlem yap
         if (data.enrolledCourses && data.enrolledCourses.length > 0) {
+          
+          // A) Duyuruları Çek
           const anns = await getAnnouncementsByCourses(data.enrolledCourses);
           setRecentAnnouncements(anns);
+
+          // B) Ödevleri Çek ve Filtrele (YENİ KISIM)
+          const allAssignments = await fetchAssignmentsFromFirebase();
+          // Sadece öğrencinin aldığı derslerin ödevlerini filtrele
+          // @ts-ignore
+          const studentAssignments = allAssignments.filter((a: Assignment) => 
+            data.enrolledCourses.includes(a.courseCode)
+          );
+          // @ts-ignore
+          setMyAssignments(studentAssignments);
         }
       }
     };
@@ -62,7 +83,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setActiveView('course-detail');
   };
 
-  const handleViewAssignment = () => { setActiveView('assignment-detail'); };
+  const handleViewAssignment = (assignment: Assignment) => { 
+    setSelectedAssignment(assignment); // Seçileni kaydet
+    setActiveView('assignment-detail'); // Sayfayı değiştir
+  };
   const goBackToCourses = () => setActiveView('courses');
   const goBackToAssignments = () => setActiveView('assignments');
 
@@ -70,7 +94,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     <div className="fade-in">
       <div className="welcome-section">
         <h1>Welcome, {userName.split(' ')[0]}! 👋</h1>
-        <p>You have new announcements from your instructors.</p>
+        <p>You have new announcements and tasks.</p>
       </div>
 
       <div className="stats-grid">
@@ -78,13 +102,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <div className="stat-info"><span className="stat-title">Enrolled Courses</span><span className="stat-value">{studentInfo?.enrolledCourses.length || 0}</span></div>
             <div className="stat-icon bg-blue">📖</div>
         </div>
-        <div className="stat-card"><div className="stat-info"><span className="stat-title">Announcements</span><span className="stat-value">{recentAnnouncements.length}</span></div><div className="stat-icon bg-orange">📢</div></div>
-        <div className="stat-card"><div className="stat-info"><span className="stat-title">Pending Tasks</span><span className="stat-value">5</span></div><div className="stat-icon bg-purple">⏰</div></div>
+        <div className="stat-card">
+            <div className="stat-info"><span className="stat-title">Announcements</span><span className="stat-value">{recentAnnouncements.length}</span></div>
+            <div className="stat-icon bg-orange">📢</div>
+        </div>
+        <div className="stat-card">
+            <div className="stat-info"><span className="stat-title">Pending Tasks</span><span className="stat-value">{myAssignments.length}</span></div>
+            <div className="stat-icon bg-purple">⏰</div>
+        </div>
         <div className="stat-card"><div className="stat-info"><span className="stat-title">GPA</span><span className="stat-value">2.8</span></div><div className="stat-icon bg-green">🎖️</div></div>
       </div>
 
       <div className="content-grid">
-        {/* DUYURULAR (ARTIK FIREBASE'DEN GELİYOR) */}
+        {/* DUYURULAR */}
         <div className="section-card">
            <div className="card-header">
               <h3>Recent Announcements</h3>
@@ -111,24 +141,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
         </div>
 
-        {/* DERSLER ÖZETİ */}
+        {/* YENİ: YAKLAŞAN ÖDEVLER KARTI */}
         <div className="section-card">
-            <h3>My Courses</h3>
-            <div className="course-list">
+            <div className="card-header">
+              <h3>Upcoming Assignments</h3>
+              <span className="icon-btn">📝</span>
+            </div>
+            
+            <div className="assignment-list" style={{marginTop:'15px'}}>
+               {myAssignments.length > 0 ? (
+                 myAssignments.map((assign) => (
+                   <div key={assign.id} className="assignment-item">
+                      <div className="task-icon" style={{backgroundColor:'#e8f5e9', color:'#2e7d32'}}>📝</div>
+                      <div className="task-info">
+                        <h4>{assign.title}</h4>
+                        <span style={{color: '#666', fontSize:'0.85rem'}}>{assign.courseCode}</span>
+                        <div style={{fontSize:'0.8rem', color:'#d32f2f', marginTop:'2px'}}>Due: {assign.dueDate}</div>
+                      </div>
+                      <button className="view-btn" onClick={() => setActiveView('assignments')}>View</button>
+                   </div>
+                 ))
+               ) : (
+                 <div style={{padding:'20px', color:'#999', textAlign:'center'}}>
+                    <p>No active assignments.</p>
+                    <small>Great job! 🎉</small>
+                 </div>
+               )}
+            </div>
+
+            {/* Ders Listesi Alt Kısımda Kalsın */}
+            <h4 style={{marginTop:'30px', borderTop:'1px solid #eee', paddingTop:'15px'}}>Quick Course Access</h4>
+            <div className="course-list" style={{marginTop:'10px'}}>
               {studentInfo?.enrolledCourses.slice(0, 3).map((code, idx) => (
-                 <div key={idx} className="course-item">
+                 <div key={idx} className="course-item" style={{padding:'10px'}}>
                     <div className="course-border" style={{backgroundColor: '#4b2e83'}}></div>
                     <div className="course-details">
-                        <h4>{code}</h4>
-                        <span className="instructor">Enrolled</span>
+                        <h4 style={{fontSize:'0.95rem'}}>{code}</h4>
                     </div>
                  </div>
               ))}
-              {(!studentInfo?.enrolledCourses || studentInfo.enrolledCourses.length === 0) && (
-                <p style={{padding:'10px', color:'#999'}}>You are not enrolled in any courses yet.</p>
-              )}
             </div>
-            <button className="view-all" style={{marginTop:'15px', width:'100%'}} onClick={() => setActiveView('courses')}>View All Courses</button>
         </div>
       </div>
     </div>
@@ -139,8 +191,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       case 'dashboard': return <DashboardOverview />;
       case 'courses': return <MyCourses onCourseSelect={handleViewCourse} enrolledCodes={studentInfo?.enrolledCourses || []} />;
       case 'course-detail': return <CourseDetails courseId={selectedCourseId} onBack={goBackToCourses} />;
-      case 'assignments': return <MyAssignments onAssignmentSelect={handleViewAssignment} />;
-      case 'assignment-detail': return <AssignmentDetails onBack={goBackToAssignments} />;
+      case 'assignments': return <MyAssignments onAssignmentSelect={handleViewAssignment} />; // Buraya da prop geçmek gerekebilir ileride
+      case 'assignment-detail': return <AssignmentDetails data={selectedAssignment} onBack={goBackToAssignments} />;
       case 'grades': return <MyGrades />;
       case 'calendar': return <Calendar />;
       default: return <DashboardOverview />;
@@ -164,7 +216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <header className="top-header">
           <div className="search-bar"><span>🔍</span><input type="text" placeholder="Search..." /></div>
           <div className="user-profile">
-            <div className="notification-icon">🔔 <span className="badge">{recentAnnouncements.length}</span></div>
+            <div className="notification-icon">🔔 <span className="badge">{recentAnnouncements.length + myAssignments.length}</span></div>
             <div className="user-info"><div className="details"><span className="u-name">{userName}</span><span className="u-role">Student</span></div><div className="avatar">{userName.charAt(0)}</div></div>
           </div>
         </header>

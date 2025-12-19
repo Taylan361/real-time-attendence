@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import { 
   collection, getDocs, addDoc, updateDoc, doc, 
-  query, where, arrayUnion 
+  query, where, arrayUnion , orderBy
 } from 'firebase/firestore';
 
 // --- TİP TANIMLARI (Interfaces) ---
@@ -144,4 +144,76 @@ export const seedDatabase = async () => {
     console.log("Demo öğrenci oluşturuldu.");
   }
   alert("Veritabanı hazır!");
+};
+export const addAssignmentToFirebase = async (data: { courseCode: string, title: string, dueDate: string }) => {
+  try {
+    const docRef = await addDoc(collection(db, "assignments"), {
+      courseCode: data.courseCode,
+      title: data.title,
+      dueDate: data.dueDate,
+      createdAt: new Date(), // Oluşturulma zamanı
+      status: 'Active',      // Varsayılan aktif
+      submittedCount: 0,     // Henüz kimse teslim etmedi
+      totalStudents: 0       // İleride öğrenci sayısını buraya bağlarız
+    });
+    console.log("Ödev eklendi ID: ", docRef.id);
+    return { success: true };
+  } catch (error) {
+    console.error("Ödev eklenirken hata:", error);
+    return { success: false, error };
+  }
+};
+
+export const fetchAssignmentsFromFirebase = async () => {
+  try {
+    // Tüm ödevleri tarihe göre yeniden eskiye sıralayıp çekiyoruz
+    const q = query(collection(db, "assignments"), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
+    
+    // Veriyi düzenleyip geri döndürüyoruz
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Ödevler çekilemedi:", error);
+    return [];
+  }
+};
+
+// --- 1. NOTLANDIRMA FONKSİYONU ---
+export const gradeAssignment = async (assignmentId: string, score: string) => {
+  try {
+    const assignmentRef = doc(db, "assignments", assignmentId);
+    await updateDoc(assignmentRef, {
+      points: score,       // Örneğin: "85/100"
+      status: 'graded'     // Durumu 'graded' yapıyoruz
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Notlandırma hatası:", error);
+    return { success: false, error };
+  }
+};
+
+// --- 2. DERSE KAYITLI ÖĞRENCİLERİ ÇEKME ---
+export const getStudentsByCourse = async (courseCode: string) => {
+  try {
+    // Tüm öğrencileri çek (Gerçek projede 'where' sorgusu daha verimli olur ama şimdilik böyle yapalım)
+    // Not: 'students' koleksiyonun varsa oradan çekiyoruz.
+    // Eğer students koleksiyonun yoksa DataManager'daki mock veriyi simüle edebiliriz.
+    
+    // YÖNTEM A: Firebase'de 'students' koleksiyonu varsa:
+    const q = query(collection(db, "students"), where("enrolledCourses", "array-contains", courseCode));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+
+  } catch (error) {
+    console.error("Öğrenci çekme hatası:", error);
+    return [];
+  }
 };
