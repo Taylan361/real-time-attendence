@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import { TeacherCalendar } from './TeacherCalendar';
 import { TeacherCourses } from './TeacherCourses';
+// DataManager'dan Firebase fonksiyonlarını çekiyoruz
+import { addAnnouncementToFirebase, registerStudentToCourse } from './DataManager';
 
 interface TeacherDashboardProps {
   onLogout: () => void;
@@ -13,7 +15,7 @@ interface Student {
   status: 'present' | 'absent' | 'late';
 }
 
-// MOCK DATABASE (Keys kept same for consistency, but you can translate names if needed)
+// MOCK DATABASE (Görüntüleme amaçlı başlangıç verisi)
 const COURSES_DB: Record<string, { code: string; time: string; students: Student[] }> = {
   'Software Validation': {
     code: 'MATH 401',
@@ -48,23 +50,41 @@ const COURSES_DB: Record<string, { code: string; time: string; students: Student
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) => {
   
+  // --- STATE YÖNETİMİ ---
   const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'courses'>('dashboard');
   
+  // Modal Görünürlükleri
   const [showAnnounceModal, setShowAnnounceModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false); // Yeni: Öğrenci Ekleme Modalı
+
+  // Form Verileri (Inputlar için)
+  const [announceTitle, setAnnounceTitle] = useState('');
+  const [announceContent, setAnnounceContent] = useState('');
+  const [assignTitle, setAssignTitle] = useState('');
+  const [assignDate, setAssignDate] = useState('');
+  const [newStudentId, setNewStudentId] = useState(''); // Yeni: Eklenecek Öğrenci No
+
+  // Seçili Ders Verileri
   const [selectedCourseKey, setSelectedCourseKey] = useState('Software Validation');
   const [students, setStudents] = useState<Student[]>(COURSES_DB['Software Validation'].students);
 
   useEffect(() => {
-    setStudents(COURSES_DB[selectedCourseKey].students);
+    // Ders değiştiğinde öğrenci listesini güncelle (Şimdilik Mock'tan çekiyor)
+    // İleride burayı da Firebase'den çekecek şekilde güncelleyebiliriz
+    if (COURSES_DB[selectedCourseKey]) {
+      setStudents(COURSES_DB[selectedCourseKey].students);
+    }
   }, [selectedCourseKey]);
 
+  // İstatistikler
   const totalStudents = students.length;
   const presentCount = students.filter(s => s.status === 'present').length;
   const absentCount = students.filter(s => s.status === 'absent').length;
   const lateCount = students.filter(s => s.status === 'late').length;
   const attendanceRate = totalStudents > 0 ? Math.round(((presentCount + (lateCount * 0.5)) / totalStudents) * 100) : 0;
+
+  // --- FONKSİYONLAR ---
 
   const handleStatusChange = (id: number, newStatus: 'present' | 'absent' | 'late') => {
     setStudents(prev => prev.map(student => student.id === id ? { ...student, status: newStatus } : student));
@@ -72,16 +92,58 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
 
   const markAllPresent = () => { setStudents(prev => prev.map(s => ({ ...s, status: 'present' }))); };
   
-  // Demo Messages in English
-  const handleSaveAnnouncement = () => { setShowAnnounceModal(false); alert("Announcement posted successfully! (Demo)"); };
-  const handleSaveAssignment = () => { setShowAssignModal(false); alert("Assignment created successfully! (Demo)"); };
+  // 1. DUYURU KAYDET (Firebase'e yazar)
+  const handleSaveAnnouncement = async () => {
+    if (!announceTitle || !selectedCourseCodeForDB()) {
+      alert("Lütfen başlık giriniz.");
+      return;
+    }
+
+    await addAnnouncementToFirebase({
+      courseCode: selectedCourseCodeForDB(), // Örn: MATH 401
+      title: announceTitle,
+      content: announceContent,
+      date: new Date().toLocaleDateString(),
+      priority: 'normal'
+    });
+
+    setShowAnnounceModal(false);
+    setAnnounceTitle('');
+    setAnnounceContent('');
+    alert("Announcement posted to Database!");
+  };
+
+  // 2. ÖĞRENCİ EKLE (Firebase'e yazar)
+  const handleAddStudent = async () => {
+    if (!newStudentId) {
+      alert("Lütfen öğrenci numarası giriniz.");
+      return;
+    }
+
+    // DataManager'daki fonksiyonu çağır
+    await registerStudentToCourse(newStudentId, selectedCourseCodeForDB());
+    
+    setShowAddStudentModal(false);
+    setNewStudentId('');
+    // Not: Listeyi anlık güncellemek için tekrar fetch yapmak gerekir, şimdilik alert yeterli.
+  };
+
+  const handleSaveAssignment = () => { 
+    setShowAssignModal(false); 
+    alert("Assignment created successfully! (Demo)"); 
+  };
 
   const handleCourseSelection = (courseName: string) => {
     setSelectedCourseKey(courseName);
     setActiveView('dashboard');
   };
 
-  // --- DASHBOARD CONTENT ---
+  // Yardımcı: Seçili dersin kodunu (MATH 401 gibi) bulur
+  const selectedCourseCodeForDB = () => {
+    return COURSES_DB[selectedCourseKey]?.code || '';
+  };
+
+  // --- DASHBOARD İÇERİĞİ ---
   const renderDashboardContent = () => (
     <div className="fade-in">
       {/* HEADER & COURSE SELECTOR */}
@@ -107,6 +169,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
         <div className="card-header">
           <h3>Attendance Control</h3>
           <div className="header-actions">
+            {/* YENİ: Öğrenci Ekleme Butonu */}
+            <button className="secondary-btn" onClick={() => setShowAddStudentModal(true)} style={{marginRight:'10px'}}>+ Add Student</button>
             <button className="secondary-btn" onClick={markAllPresent}>Mark All Present</button>
             <button className="primary-black-btn">▶ Start Session</button>
           </div>
@@ -192,28 +256,99 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
 
         {renderContent()}
 
-        {/* MODALS */}
+        {/* --- MODALS --- */}
+
+        {/* 1. DUYURU MODALI */}
         {showAnnounceModal && (
           <div className="modal-overlay">
             <div className="modal-content">
               <h3>📢 Post Announcement</h3>
-              <div className="form-group"><label>Title</label><input type="text" className="modal-input" placeholder="e.g. Exam Dates" /></div>
-              <div className="form-group"><label>Content</label><textarea className="modal-input" rows={4} placeholder="Write details here..."></textarea></div>
-              <div className="modal-actions"><button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>Cancel</button><button className="primary-black-btn" onClick={handleSaveAnnouncement}>Post</button></div>
+              <div className="form-group">
+                <label>Title</label>
+                <input 
+                  type="text" 
+                  className="modal-input" 
+                  placeholder="e.g. Exam Dates" 
+                  value={announceTitle} 
+                  onChange={(e) => setAnnounceTitle(e.target.value)} 
+                />
+              </div>
+              <div className="form-group">
+                <label>Content</label>
+                <textarea 
+                  className="modal-input" 
+                  rows={4} 
+                  placeholder="Write details here..."
+                  value={announceContent}
+                  onChange={(e) => setAnnounceContent(e.target.value)}
+                ></textarea>
+              </div>
+              <div className="modal-actions">
+                <button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>Cancel</button>
+                <button className="primary-black-btn" onClick={handleSaveAnnouncement}>Post</button>
+              </div>
             </div>
           </div>
         )}
 
+        {/* 2. ÖDEV MODALI */}
         {showAssignModal && (
           <div className="modal-overlay">
             <div className="modal-content">
               <h3>📝 Create Assignment</h3>
-              <div className="form-group"><label>Title</label><input type="text" className="modal-input" placeholder="e.g. Final Project Report" /></div>
-              <div className="form-group"><label>Due Date</label><input type="date" className="modal-input" /></div>
-              <div className="modal-actions"><button className="secondary-btn" onClick={() => setShowAssignModal(false)}>Cancel</button><button className="primary-black-btn" onClick={handleSaveAssignment}>Create</button></div>
+              <div className="form-group">
+                <label>Title</label>
+                <input 
+                  type="text" 
+                  className="modal-input" 
+                  placeholder="e.g. Final Project Report" 
+                  value={assignTitle}
+                  onChange={(e) => setAssignTitle(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Due Date</label>
+                <input 
+                  type="date" 
+                  className="modal-input"
+                  value={assignDate}
+                  onChange={(e) => setAssignDate(e.target.value)}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="secondary-btn" onClick={() => setShowAssignModal(false)}>Cancel</button>
+                <button className="primary-black-btn" onClick={handleSaveAssignment}>Create</button>
+              </div>
             </div>
           </div>
         )}
+
+        {/* 3. ÖĞRENCİ EKLEME MODALI (YENİ) */}
+        {showAddStudentModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3>👤 Add Student to Course</h3>
+              <p style={{marginBottom: '15px', color:'#666', fontSize:'0.9rem'}}>
+                Adding to: <strong>{selectedCourseKey}</strong>
+              </p>
+              <div className="form-group">
+                <label>Student School ID</label>
+                <input 
+                  type="text" 
+                  className="modal-input" 
+                  placeholder="e.g. 220706010" 
+                  value={newStudentId}
+                  onChange={(e) => setNewStudentId(e.target.value)}
+                />
+              </div>
+              <div className="modal-actions">
+                <button className="secondary-btn" onClick={() => setShowAddStudentModal(false)}>Cancel</button>
+                <button className="primary-black-btn" onClick={handleAddStudent}>Add Student</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );

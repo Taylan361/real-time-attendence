@@ -1,49 +1,53 @@
 import { useState, useEffect } from 'react';
-import LoginPage from './LoginPage';
+import './App.css';
+import LoginPage from './LoginPage'; 
 import { Dashboard } from './Dashboard';
 import { TeacherDashboard } from './TeacherDashboard';
+// initDB satırını sildik çünkü artık Firebase kullanıyoruz.
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<'student' | 'admin'>('student');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
 
   useEffect(() => {
+    // Sayfa yenilendiğinde oturumu hatırla
     const savedLogin = localStorage.getItem('savedLogin');
-    
     if (savedLogin) {
-      const userRecord = localStorage.getItem(savedLogin);
-      if (userRecord) {
-        const user = JSON.parse(userRecord);
-        setIsAuthenticated(true);
-        setUserRole(user.role); // Kayıtlı rolü yükle
+      // Basit kontrol: Email formatıysa öğretmendir
+      if (savedLogin.includes('@')) {
+        setUserRole('teacher');
+      } else {
+        setUserRole('student');
       }
+      setIsLoggedIn(true);
     }
-    setIsLoading(false);
   }, []);
 
-  // GÜNCELLEME: Rolü doğrudan parametre olarak alıyoruz
-  const handleLoginSuccess = (role: 'student' | 'admin') => {
-    setUserRole(role); // Gelen rolü state'e yaz
-    setIsAuthenticated(true);
-    setUserRole(role);
+  // Login sayfasından gelen rolü karşılayan fonksiyon
+  const handleLogin = (role: string) => {
+    // Login sayfası 'admin' gönderirse biz onu 'teacher' olarak işleyelim
+    if (role === 'admin' || role === 'teacher') {
+      setUserRole('teacher');
+    } else {
+      setUserRole('student');
+    }
+    setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
+    localStorage.removeItem('savedLogin');
+    localStorage.removeItem('currentStudentId');
+    setIsLoggedIn(false);
     setUserRole('student');
   };
 
-  if (isLoading) {
-    return <div style={{display:'flex', height:'100vh', justifyContent:'center', alignItems:'center'}}>Yükleniyor...</div>;
-  }
-
   return (
-    <div>
-      {!isAuthenticated ? (
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
+    <div className="app-container">
+      {!isLoggedIn ? (
+        <LoginPage onLoginSuccess={handleLogin} />
       ) : (
-        userRole === 'admin' ? (
+        // Rol kontrolüne göre doğru paneli aç
+        userRole === 'teacher' ? (
           <TeacherDashboard onLogout={handleLogout} />
         ) : (
           <Dashboard onLogout={handleLogout} />
