@@ -6,14 +6,23 @@ import { MyGrades } from './MyGrades';
 import { Calendar } from './Calendar';
 import { CourseDetails } from './CourseDetails';
 import { AssignmentDetails } from './AssignmentDetails';
-// fetchAssignmentsFromFirebase EKLENDİ
-import { getStudentData, type Student, getAnnouncementsByCourses, type Announcement, fetchAssignmentsFromFirebase } from './DataManager';
+// FaceAuthModal'ı import etmeyi unutmuyoruz (Dosyayı oluşturduğunu varsayıyorum)
+import { FaceAuthModal } from './FaceAuthModal'; 
+
+import { 
+  getStudentData, 
+  type Student, 
+  getAnnouncementsByCourses, 
+  type Announcement, 
+  fetchAssignmentsFromFirebase,
+  checkActiveSession,   // <-- YENİ
+  markStudentPresent    // <-- YENİ
+} from './DataManager';
 
 interface DashboardProps {
   onLogout: () => void;
 }
 
-// Ödev Tipi Tanımlaması
 interface Assignment {
   id: string;
   title: string;
@@ -30,12 +39,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   
   const [studentInfo, setStudentInfo] = useState<Student | null>(null);
   const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
-  // YENİ: Ödevleri tutacak state
   const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
-// Seçilen ödevi hafızada tutmak için:
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+
+  // --- YOKLAMA İÇİN YENİ STATE'LER ---
+  const [activeSessionCourse, setActiveSessionCourse] = useState<string | null>(null); // Hangi derste yoklama var?
+  const [showFaceAuth, setShowFaceAuth] = useState(false); // Kamera penceresi açık mı?
+
   useEffect(() => {
-    // 1. İsim Çekme (Local Storage)
+    // 1. İsim Çekme
     const savedLogin = localStorage.getItem('savedLogin');
     if (savedLogin) {
       const userRecord = localStorage.getItem(savedLogin);
@@ -45,26 +57,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       }
     }
 
-    // 2. VERİLERİ ÇEKME (Firebase)
+    // 2. Temel Verileri Çekme
     const fetchData = async () => {
       const currentStudentId = localStorage.getItem('currentStudentId') || '220706010';
-      
       const data = await getStudentData(currentStudentId);
       
       if (data) {
         setStudentInfo(data);
         if (data.name) setUserName(data.name);
 
-        // Öğrencinin dersleri varsa işlem yap
         if (data.enrolledCourses && data.enrolledCourses.length > 0) {
-          
-          // A) Duyuruları Çek
           const anns = await getAnnouncementsByCourses(data.enrolledCourses);
           setRecentAnnouncements(anns);
 
-          // B) Ödevleri Çek ve Filtrele (YENİ KISIM)
           const allAssignments = await fetchAssignmentsFromFirebase();
-          // Sadece öğrencinin aldığı derslerin ödevlerini filtrele
           // @ts-ignore
           const studentAssignments = allAssignments.filter((a: Assignment) => 
             data.enrolledCourses.includes(a.courseCode)
@@ -78,17 +84,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     fetchData();
   }, []);
 
+  // --- CANLI YOKLAMA KONTROLÜ (POLLING) ---
+  // Her 5 saniyede bir "Acaba hoca yoklamayı açtı mı?" diye kontrol eder.
+  useEffect(() => {
+    if (!studentInfo?.enrolledCourses) return;
+
+    const interval = setInterval(async () => {
+        // Öğrencinin aldığı her dersi kontrol et
+        for (const courseCode of studentInfo.enrolledCourses) {
+            const isActive = await checkActiveSession(courseCode);
+            if (isActive) {
+                // Eğer aktif yoklama varsa ve daha önce katılmadıysak bildirimi göster
+                // (Burada basitlik adına direkt gösteriyoruz, 'daha önce katıldı mı' kontrolü eklenebilir)
+                setActiveSessionCourse(courseCode);
+                break; // Bir tane bulmak yeterli
+            } else {
+                // Eğer hoca kapattıysa bildirimi kaldır
+                if (activeSessionCourse === courseCode) {
+                    setActiveSessionCourse(null);
+                }
+            }
+        }
+    }, 5000); // 5 saniyede bir
+
+    return () => clearInterval(interval);
+  }, [studentInfo, activeSessionCourse]);
+
+
+  // --- İŞLEVLER ---
   const handleViewCourse = (courseName: string) => {
     setSelectedCourseId(courseName);
     setActiveView('course-detail');
   };
 
   const handleViewAssignment = (assignment: Assignment) => { 
-    setSelectedAssignment(assignment); // Seçileni kaydet
-    setActiveView('assignment-detail'); // Sayfayı değiştir
+    setSelectedAssignment(assignment);
+    setActiveView('assignment-detail');
   };
+
   const goBackToCourses = () => setActiveView('courses');
   const goBackToAssignments = () => setActiveView('assignments');
+
+  // --- YÜZ TANIMA BAŞARILI OLUNCA ---
+// --- YÜZ TANIMA BAŞARILI OLUNCA ---
+  const handleFaceAuthSuccess = async () => {
+     if (activeSessionCourse) {
+         // 1. Öğrenci numarasını LocalStorage'dan al (En garantisi)
+         const currentId = localStorage.getItem('currentStudentId') || '220706010';
+
+         // 2. Veritabanına "VAR" yaz
+         await markStudentPresent(currentId, activeSessionCourse);
+         
+         // 3. Modalı ve bildirimi kapat
+         setShowFaceAuth(false);
+         setActiveSessionCourse(null);
+         
+         alert(`✅ ${activeSessionCourse} dersi için katılımınız onaylandı!`);
+     }
+  };
 
   const DashboardOverview = () => (
     <div className="fade-in">
@@ -96,6 +149,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <h1>Welcome, {userName.split(' ')[0]}! 👋</h1>
         <p>You have new announcements and tasks.</p>
       </div>
+
+      {/* --- ACİL YOKLAMA BİLDİRİMİ (VARSA GÖZÜKÜR) --- */}
+      {activeSessionCourse && (
+          <div className="attendance-alert-card" style={{
+              background: 'linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%)',
+              color: 'white',
+              padding: '20px',
+              borderRadius: '12px',
+              marginBottom: '25px',
+              boxShadow: '0 4px 15px rgba(211, 47, 47, 0.3)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              animation: 'pulse 2s infinite'
+          }}>
+              <div>
+                  <h2 style={{margin:0, fontSize:'1.4rem'}}>⚠️ Yoklama Başladı!</h2>
+                  <p style={{margin:'5px 0 0 0', opacity:0.9}}>
+                      <strong>{activeSessionCourse}</strong> dersi için eğitmen yoklamayı başlattı.
+                  </p>
+              </div>
+              <button 
+                  onClick={() => setShowFaceAuth(true)}
+                  style={{
+                      backgroundColor: 'white',
+                      color: '#d32f2f',
+                      border: 'none',
+                      padding: '10px 25px',
+                      borderRadius: '30px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                  }}
+              >
+                  📸 Hemen Katıl
+              </button>
+          </div>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -120,7 +212,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <h3>Recent Announcements</h3>
               <span className="icon-btn">📢</span>
             </div>
-            <p className="subtitle">Latest updates from your classes</p>
             
             <div className="assignment-list">
                {recentAnnouncements.length > 0 ? (
@@ -141,7 +232,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
         </div>
 
-        {/* YENİ: YAKLAŞAN ÖDEVLER KARTI */}
+        {/* ÖDEVLER */}
         <div className="section-card">
             <div className="card-header">
               <h3>Upcoming Assignments</h3>
@@ -169,7 +260,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                )}
             </div>
 
-            {/* Ders Listesi Alt Kısımda Kalsın */}
             <h4 style={{marginTop:'30px', borderTop:'1px solid #eee', paddingTop:'15px'}}>Quick Course Access</h4>
             <div className="course-list" style={{marginTop:'10px'}}>
               {studentInfo?.enrolledCourses.slice(0, 3).map((code, idx) => (
@@ -191,7 +281,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       case 'dashboard': return <DashboardOverview />;
       case 'courses': return <MyCourses onCourseSelect={handleViewCourse} enrolledCodes={studentInfo?.enrolledCourses || []} />;
       case 'course-detail': return <CourseDetails courseId={selectedCourseId} onBack={goBackToCourses} />;
-      case 'assignments': return <MyAssignments onAssignmentSelect={handleViewAssignment} />; // Buraya da prop geçmek gerekebilir ileride
+      case 'assignments': return <MyAssignments onAssignmentSelect={handleViewAssignment} />;
       case 'assignment-detail': return <AssignmentDetails data={selectedAssignment} onBack={goBackToAssignments} />;
       case 'grades': return <MyGrades />;
       case 'calendar': return <Calendar />;
@@ -201,6 +291,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="dashboard-layout">
+      {/* YÜZ TANIMA MODALI (TÜM SAYFANIN ÜZERİNDE ÇIKACAK) */}
+      <FaceAuthModal 
+        isOpen={showFaceAuth} 
+        onClose={() => setShowFaceAuth(false)} 
+        onSuccess={handleFaceAuthSuccess}
+        studentName={userName}
+      />
+
       <aside className="sidebar">
         <div className="sidebar-logo"><div className="logo-icon">🎓</div><h2>UniPortal</h2></div>
         <nav className="sidebar-menu">
@@ -216,7 +314,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <header className="top-header">
           <div className="search-bar"><span>🔍</span><input type="text" placeholder="Search..." /></div>
           <div className="user-profile">
-            <div className="notification-icon">🔔 <span className="badge">{recentAnnouncements.length + myAssignments.length}</span></div>
+            <div className="notification-icon">🔔 <span className="badge">{recentAnnouncements.length + myAssignments.length + (activeSessionCourse ? 1 : 0)}</span></div>
             <div className="user-info"><div className="details"><span className="u-name">{userName}</span><span className="u-role">Student</span></div><div className="avatar">{userName.charAt(0)}</div></div>
           </div>
         </header>

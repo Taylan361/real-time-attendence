@@ -8,8 +8,11 @@ import {
   addAssignmentToFirebase, 
   getStudentsByCourse,          // <-- YENİ
   gradeAssignment,              // <-- YENİ
-  fetchAssignmentsFromFirebase  // <-- YENİ
+  toggleAttendanceSession, // <-- YENİ
+  listenToRealTimeAttendance,
+  listenToRealTimeAssignments
 } from './DataManager';
+import { injectSampleData } from './DataManager'; // <-- Bunu ekle
 
 
 // Firebase importları
@@ -92,6 +95,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
   const [selectedCourseKey, setSelectedCourseKey] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
 
+  const [isSessionActive, setIsSessionActive] = useState(false);
   // --- FIREBASE VERİ ÇEKME ---
   useEffect(() => {
     const fetchAssignedCourses = async () => {
@@ -133,29 +137,29 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
     fetchAssignedCourses();
   }, [currentUserEmail]);
 
-// --- YENİ: GERÇEK ÖĞRENCİLERİ VE ÖDEVLERİ ÇEKME ---
+// --- 2. GERÇEK ÖĞRENCİLERİ VE CANLI ÖDEVLERİ ÇEKME ---
   useEffect(() => {
-    const loadCourseData = async () => {
-      const code = selectedCourseCodeForDB(); // Örn: "MATH 401"
-      if (!code) return;
+    const code = selectedCourseCodeForDB(); // Örn: "MATH 401"
+    if (!code) return;
 
-      // 1. GERÇEK ÖĞRENCİLERİ GETİR
+    // A) ÖĞRENCİLERİ GETİR (Burası aynı kalıyor)
+    const fetchStudents = async () => {
       try {
         const realStudents = await getStudentsByCourse(code);
-        
         if (realStudents.length > 0) {
-          // DataManager'dan gelen veriyi dashboard formatına çevir
           const formattedStudents = realStudents.map((s: any) => ({
             id: s.studentId || s.id || "Bilinmiyor",
             name: (s.name || "") + ' ' + (s.surname || ""),
-            status: 'present' // Varsayılan durum
+            status: 'absent' 
           }));
           // @ts-ignore
           setStudents(formattedStudents);
         } else {
-          // Eğer veritabanında öğrenci yoksa yine de Mock data'yı yedek olarak göster (Test için)
+          // Yedek (Mock) Veri
           if (COURSES_DB[selectedCourseKey]) {
-             setStudents(COURSES_DB[selectedCourseKey].students);
+             const mockStudents = COURSES_DB[selectedCourseKey].students.map(s => ({...s, status: 'absent'}));
+             // @ts-ignore
+             setStudents(mockStudents);
           } else {
              setStudents([]);
           }
@@ -163,24 +167,48 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
       } catch (err) {
         console.error("Öğrenci yükleme hatası:", err);
       }
+    };
+    fetchStudents();
 
-      // 2. BU DERSİN ÖDEVLERİNİ GETİR (NOTLANDIRMA İÇİN)
-      try {
-        const allAssigns = await fetchAssignmentsFromFirebase();
-        // Sadece bu derse ait olanları filtrele
+    // B) CANLI ÖDEV DİNLEME (BURASI DEĞİŞTİ 🔴)
+    // Artık 'fetch' değil 'listen' kullanıyoruz.
+    const unsubscribeAssignments = listenToRealTimeAssignments((allAssignments) => {
+        // Gelen tüm ödevleri, şu anki derse göre filtrele
         // @ts-ignore
-        const filtered = allAssigns.filter((a: any) => 
+        const filtered = allAssignments.filter((a: any) => 
             a.courseCode && a.courseCode.trim().toUpperCase() === code.trim().toUpperCase()
         );
         setCourseAssignments(filtered);
-      } catch (err) {
-        console.error("Ödev yükleme hatası:", err);
-      }
+    });
+
+    // Cleanup: Sayfa değişirse dinlemeyi durdur
+    return () => {
+        unsubscribeAssignments();
     };
 
-    loadCourseData();
   }, [selectedCourseKey, assignedCourseNames]); // assignedCourseNames eklendi ki ilk açılışta tetiklensin
+  
+  // --- 3. CANLI YOKLAMA DİNLEME (REAL-TIME LISTENER) ---
+  useEffect(() => {
+    const code = selectedCourseCodeForDB();
+    if (!code) return;
 
+    // DataManager'daki dinleyiciyi başlat
+    // Veritabanına yeni bir 'present' kaydı düştüğünde burası çalışır
+    const unsubscribe = listenToRealTimeAttendance(code, (presentStudentIds) => {
+        
+        setStudents(prevStudents => prevStudents.map(student => {
+            // Eğer öğrencinin ID'si gelen listede varsa durumunu 'present' yap
+            if (presentStudentIds.includes(student.id.toString())) {
+                return { ...student, status: 'present' };
+            }
+            return student;
+        }));
+    });
+
+    // Sayfa değişirse dinlemeyi durdur (Performans için)
+    return () => unsubscribe();
+  }, [selectedCourseKey]);
   // İstatistikler
   const totalStudents = students.length;
   const presentCount = students.filter(s => s.status === 'present').length;
@@ -212,6 +240,18 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
     alert("Duyuru yayınlandı!");
   };
 
+  const handleToggleSession = async () => {
+    const newState = !isSessionActive;
+    // DataManager'daki fonksiyonu çağır
+    await toggleAttendanceSession(selectedCourseCodeForDB(), newState);
+    setIsSessionActive(newState);
+    
+    if(newState) {
+        alert("📡 Yoklama sistemi açıldı! Öğrenciler artık bildirim alıyor.");
+    } else {
+        alert("🔒 Yoklama sistemi kapatıldı.");
+    }
+};
   const handleAddStudent = async () => {
     if (!newStudentId) {
       alert("Lütfen öğrenci numarası giriniz.");
@@ -302,7 +342,28 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
           <div className="header-actions">
             <button className="secondary-btn" onClick={() => setShowAddStudentModal(true)} style={{marginRight:'10px'}}>+ Öğrenci Ekle</button>
             <button className="secondary-btn" onClick={markAllPresent}>Tümünü 'Var' Say</button>
+            {/* --- YENİ EKLENECEK VERİ BUTONU (BURAYA KOYUYORUZ) --- */}
+            <button 
+                className="secondary-btn" 
+                onClick={injectSampleData}
+                style={{
+                    marginRight:'5px', 
+                    border: '1px dashed #d32f2f', 
+                    color: '#d32f2f', 
+                    fontWeight: 'bold'
+                }}
+            >
+                🛠️ Veri Yükle
+            </button>
+            {/* ---------------------------------------------------- */}
             <button className="primary-black-btn">▶ Dersi Başlat</button>
+            <button 
+    className={isSessionActive ? "primary-black-btn" : "secondary-btn"} 
+    onClick={handleToggleSession}
+    style={{backgroundColor: isSessionActive ? '#d32f2f' : '', color: isSessionActive ? 'white' : ''}}
+>
+    {isSessionActive ? "⏹ Yoklamayı Bitir" : "📡 Yoklamayı Başlat"}
+</button>
           </div>
         </div>
         <div className="attendance-stats">
@@ -450,6 +511,7 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
               <div className="modal-actions">
                 <button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>İptal</button>
                 <button className="primary-black-btn" onClick={handleSaveAnnouncement}>Yayınla</button>
+                
               </div>
             </div>
           </div>
@@ -495,60 +557,159 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
             </div>
           </div>
         )}
-        {/* 4. NOTLANDIRMA MODALI (YENİ) */}
+{/* 4. NOTLANDIRMA MODALI (GÜVENLİK KONTROLLÜ) */}
         {showGradingModal && (
           <div className="modal-overlay">
-            <div className="modal-content" style={{maxWidth:'600px'}}>
-              <h3>📝 Ödev Notlandırma</h3>
-              <p style={{marginBottom:'15px', color:'#666'}}>Ders: <strong>{selectedCourseCodeForDB()}</strong></p>
+            <div className="modal-content" style={{maxWidth:'650px'}}>
+              <div style={{borderBottom:'1px solid #eee', paddingBottom:'15px', marginBottom:'15px'}}>
+                  <h3 style={{margin:0}}>⚖️ Adil Notlandırma Sistemi</h3>
+                  <p style={{margin:'5px 0 0 0', color:'#666', fontSize:'0.9rem'}}>
+                      Ders: <strong>{selectedCourseCodeForDB()}</strong> | 
+                      <span style={{color:'#d32f2f', marginLeft:'5px'}}>
+                         ⚠️ İsimler gizlenmiştir (Blind Grading)
+                      </span>
+                  </p>
+              </div>
               
-              <div style={{maxHeight:'300px', overflowY:'auto'}}>
+              <div style={{maxHeight:'400px', overflowY:'auto', paddingRight:'5px'}}>
                 {courseAssignments.length === 0 ? (
-                    <p>Bu derste henüz ödev yok.</p>
+                    <div style={{textAlign:'center', padding:'30px', color:'#999'}}>
+                        <span style={{fontSize:'2rem'}}>📭</span>
+                        <p>Bu derste henüz değerlendirilecek ödev yok.</p>
+                    </div>
                 ) : (
-                    courseAssignments.map((assign: any) => (
-                        <div key={assign.id} style={{borderBottom:'1px solid #eee', padding:'15px 0', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                            <div>
-                                <strong style={{display:'block', fontSize:'1rem'}}>{assign.title}</strong>
-                                <span style={{fontSize:'0.8rem', color: assign.status === 'submitted' ? 'green' : '#999'}}>
-                                    Durum: {assign.status === 'submitted' ? 'Teslim Edildi ✅' : assign.status === 'graded' ? 'Notlandı 🌟' : 'Bekliyor ⏳'}
-                                </span>
-                                <div style={{fontSize:'0.8rem', color:'#555'}}>Tarih: {assign.dueDate}</div>
-                                {assign.points && <div style={{color:'#4b2e83', fontWeight:'bold', fontSize:'0.9rem'}}>Verilen Not: {assign.points}</div>}
+                    courseAssignments.map((assign: any) => {
+                        // --- DURUM KONTROLLERİ ---
+                        const isGraded = assign.status === 'graded';
+                        const isSubmitted = assign.status === 'submitted';
+                        // Eğer notlanmamışsa VE teslim edilmemişse -> Bekleniyor durumudur
+                        const isPending = !isGraded && !isSubmitted;
+
+                        // Ekranda gösterilecek puan (Sadece notlanmışsa göster)
+                        const displayPoints = isGraded ? assign.points.toString().replace(/\D/g, '') : '';
+
+                        return (
+                            <div key={assign.id} style={{
+                                backgroundColor: isGraded ? '#f9f9f9' : 'white',
+                                border: isGraded ? '1px solid #eee' : '1px solid #ddd',
+                                borderRadius: '8px',
+                                padding: '15px',
+                                marginBottom: '10px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                opacity: isGraded ? 0.7 : 1,
+                                transition: 'all 0.3s'
+                            }}>
+                                {/* SOL TARAFF: Ödev Bilgisi */}
+                                <div>
+                                    <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                        <strong style={{fontSize:'1rem', color:'#333'}}>
+                                            📄 {assign.title}
+                                        </strong>
+                                        
+                                        {/* --- DURUM ROZETİ (3 Farklı Renk) --- */}
+                                        {isGraded ? (
+                                            <span style={{fontSize:'0.7rem', padding:'3px 8px', borderRadius:'12px', background:'#e8f5e9', color:'#2e7d32', border:'1px solid #c8e6c9', fontWeight:'bold'}}>
+                                                NOTLANDI
+                                            </span>
+                                        ) : isSubmitted ? (
+                                            <span style={{fontSize:'0.7rem', padding:'3px 8px', borderRadius:'12px', background:'#e3f2fd', color:'#1565c0', border:'1px solid #bbdefb', fontWeight:'bold'}}>
+                                                TESLİM EDİLDİ
+                                            </span>
+                                        ) : (
+                                            <span style={{fontSize:'0.7rem', padding:'3px 8px', borderRadius:'12px', background:'#fff3e0', color:'#ef6c00', border:'1px solid #ffe0b2', fontWeight:'bold'}}>
+                                                BEKLENİYOR
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div style={{fontSize:'0.85rem', color:'#666', marginTop:'5px'}}>
+                                        Son Teslim: {assign.dueDate} • ID: #{assign.id.substring(0, 6)}...
+                                    </div>
+                                    
+                                    {isGraded && <div style={{fontSize:'0.8rem', color:'#2e7d32', marginTop:'4px'}}>🔒 Not sisteme işlendi.</div>}
+                                </div>
+                                
+                                {/* SAĞ TARAF: Puanlama Alanı */}
+                                <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                    
+                                    {/* SADECE TESLİM EDİLMİŞ VEYA NOTLANMIŞSA GİRİŞ ALANINI GÖSTER */}
+                                    {isSubmitted || isGraded ? (
+                                        <>
+                                            <div style={{position:'relative'}}>
+                                                <input 
+                                                    id={`grade-${assign.id}`} 
+                                                    type="text" 
+                                                    placeholder="--" 
+                                                    disabled={isGraded} // Notlandıysa kilitli
+                                                    defaultValue={displayPoints} 
+                                                    style={{
+                                                        padding:'8px', 
+                                                        width:'60px', 
+                                                        textAlign:'center',
+                                                        border: isGraded ? '1px solid #ddd' : '2px solid #333',
+                                                        borderRadius:'6px',
+                                                        fontWeight:'bold',
+                                                        fontSize:'1.1rem',
+                                                        backgroundColor: isGraded ? '#eee' : 'white',
+                                                        color: isGraded ? '#888' : 'black'
+                                                    }}
+                                                />
+                                                <span style={{position:'absolute', right:'-15px', top:'10px', fontSize:'0.8rem', color:'#999'}}>/100</span>
+                                            </div>
+
+                                            {!isGraded ? (
+                                                <button 
+                                                    className="primary-black-btn" 
+                                                    style={{fontSize:'0.85rem', padding:'8px 15px', height:'38px'}}
+                                                    onClick={async () => {
+                                                        const input = document.getElementById(`grade-${assign.id}`) as HTMLInputElement;
+                                                        const val = input.value.trim();
+                                                        
+                                                        if(val && !isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100) {
+                                                            const result = await gradeAssignment(assign.id, val);
+                                                            if (result.success) {
+                                                                // State Güncelleme (UI Anında değişsin)
+                                                                setCourseAssignments(prev => prev.map(item => 
+                                                                    item.id === assign.id ? { ...item, points: val, status: 'graded' } : item
+                                                                ));
+                                                                alert(`✅ Not Kaydedildi: ${val}`);
+                                                            } else {
+                                                                alert("❌ Hata oluştu.");
+                                                            }
+                                                        } else {
+                                                            alert("Geçerli bir not girin (0-100).");
+                                                        }
+                                                    }}
+                                                >
+                                                    Kaydet
+                                                </button>
+                                            ) : (
+                                                <div style={{width:'80px', textAlign:'center', fontSize:'1.5rem'}}>✅</div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        // EĞER ÖĞRENCİ HENÜZ TESLİM ETMEDİYSE
+                                        <div style={{
+                                            fontSize:'0.85rem', 
+                                            color:'#999', 
+                                            fontStyle:'italic', 
+                                            padding:'10px', 
+                                            background:'#f5f5f5', 
+                                            borderRadius:'5px'
+                                        }}>
+                                            ⏳ Öğrenci henüz teslim etmedi
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            
-                            <div style={{display:'flex', flexDirection:'column', gap:'5px'}}>
-                                <input 
-                                    id={`grade-${assign.id}`} 
-                                    type="text" 
-                                    placeholder="Not (0-100)" 
-                                    style={{padding:'5px', width:'80px', border:'1px solid #ccc', borderRadius:'4px'}}
-                                />
-                                <button 
-                                    className="primary-black-btn" 
-                                    style={{fontSize:'0.8rem', padding:'5px 10px'}}
-                                    onClick={async () => {
-                                        const input = document.getElementById(`grade-${assign.id}`) as HTMLInputElement;
-                                        if(input.value) {
-                                            // DataManager'daki gradeAssignment fonksiyonunu çağır
-                                            await gradeAssignment(assign.id, input.value);
-                                            alert(`"${assign.title}" için not kaydedildi: ${input.value}`);
-                                            // Listeyi yenilemek için sayfayı yenilemeden state güncellenebilir ama şimdilik alert yeterli
-                                            setShowGradingModal(false);
-                                        } else {
-                                            alert("Lütfen bir not girin.");
-                                        }
-                                    }}
-                                >
-                                    Kaydet
-                                </button>
-                            </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
               </div>
 
-              <div className="modal-actions" style={{marginTop:'20px'}}>
+              <div className="modal-actions" style={{marginTop:'20px', borderTop:'1px solid #eee', paddingTop:'15px'}}>
                 <button className="secondary-btn" onClick={() => setShowGradingModal(false)}>Kapat</button>
               </div>
             </div>
