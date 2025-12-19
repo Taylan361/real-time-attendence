@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
-import { TeacherCalendar } from './TeacherCalendar';
+import { TeacherCalendar } from './TeacherCalendar'; // Bu dosyalar sende varsa kalsın, yoksa hata verebilir, yorum satırına alabilirsin.
 import { TeacherCourses } from './TeacherCourses';
-// DataManager'dan Firebase fonksiyonlarını çekiyoruz
 import { addAnnouncementToFirebase, registerStudentToCourse } from './DataManager';
+
+// Firebase importları
+import { db } from './firebase';
+import { doc, getDoc } from "firebase/firestore";
 
 interface TeacherDashboardProps {
   onLogout: () => void;
+  currentUserEmail: string; // Hangi öğretmenin giriş yaptığını bilmemiz lazım
 }
 
 interface Student {
@@ -15,7 +19,7 @@ interface Student {
   status: 'present' | 'absent' | 'late';
 }
 
-// MOCK DATABASE (Görüntüleme amaçlı başlangıç verisi)
+// MOCK DATABASE (Ders içerikleri burada duruyor, ama erişim yetkiye göre olacak)
 const COURSES_DB: Record<string, { code: string; time: string; students: Student[] }> = {
   'Software Validation': {
     code: 'MATH 401',
@@ -45,35 +49,86 @@ const COURSES_DB: Record<string, { code: string; time: string; students: Student
       { id: 2024020, name: 'Ahmet Yılmaz', status: 'present' },
       { id: 2024021, name: 'Burak Can', status: 'late' },
     ]
-  }
+  },
+  // Müdür panelindeki isimlerle buradakilerin EŞLEŞMESİ lazım.
+  'Calculus I': { code: 'MAT 101', time: 'Mon 09:00', students: [] },
+  'Physics': { code: 'PHY 101', time: 'Wed 13:00', students: [] },
+  'Artificial Intelligence': { code: 'AI 404', time: 'Fri 14:00', students: [] },
+  'Web Development': { code: 'CS 202', time: 'Tue 10:00', students: [] },
 };
 
-export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) => {
+export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, currentUserEmail }) => {
   
   // --- STATE YÖNETİMİ ---
   const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'courses'>('dashboard');
+  const [loading, setLoading] = useState(true);
   
+  // Müdürün atadığı derslerin listesi
+  const [assignedCourseNames, setAssignedCourseNames] = useState<string[]>([]);
+
   // Modal Görünürlükleri
   const [showAnnounceModal, setShowAnnounceModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showAddStudentModal, setShowAddStudentModal] = useState(false); // Yeni: Öğrenci Ekleme Modalı
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
 
-  // Form Verileri (Inputlar için)
+  // Form Verileri
   const [announceTitle, setAnnounceTitle] = useState('');
   const [announceContent, setAnnounceContent] = useState('');
   const [assignTitle, setAssignTitle] = useState('');
   const [assignDate, setAssignDate] = useState('');
-  const [newStudentId, setNewStudentId] = useState(''); // Yeni: Eklenecek Öğrenci No
+  const [newStudentId, setNewStudentId] = useState('');
 
-  // Seçili Ders Verileri
-  const [selectedCourseKey, setSelectedCourseKey] = useState('Software Validation');
-  const [students, setStudents] = useState<Student[]>(COURSES_DB['Software Validation'].students);
+  // Seçili Ders Verileri (Başlangıçta boş)
+  const [selectedCourseKey, setSelectedCourseKey] = useState('');
+  const [students, setStudents] = useState<Student[]>([]);
 
+  // --- FIREBASE VERİ ÇEKME ---
   useEffect(() => {
-    // Ders değiştiğinde öğrenci listesini güncelle (Şimdilik Mock'tan çekiyor)
-    // İleride burayı da Firebase'den çekecek şekilde güncelleyebiliriz
-    if (COURSES_DB[selectedCourseKey]) {
+    const fetchAssignedCourses = async () => {
+      setLoading(true);
+      try {
+        if (!currentUserEmail) return;
+
+        const docRef = doc(db, "teachers", currentUserEmail);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const myCourses = data.assignedCourses || []; // Örn: ['Software Validation', 'Physics']
+          
+          setAssignedCourseNames(myCourses);
+
+          // Eğer öğretmene atanmış ders varsa, ilkini otomatik seç
+          if (myCourses.length > 0) {
+            // Atanan ders bizim COURSES_DB'de tanımlı mı diye kontrol et (Hata almamak için)
+            const firstValidCourse = myCourses.find((c: string) => COURSES_DB[c]);
+            
+            if (firstValidCourse) {
+              setSelectedCourseKey(firstValidCourse);
+            } else if (myCourses.length > 0) {
+              // Veritabanında var ama COURSES_DB'de tanımı yoksa (Fallback)
+              console.warn("Ders atandı ama içerik mock datasında yok:", myCourses[0]);
+              // Yine de state'e atayalım, boş liste gösteririz
+              setSelectedCourseKey(myCourses[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Ders verisi çekilemedi:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignedCourses();
+  }, [currentUserEmail]);
+
+  // Seçili ders değişince öğrencileri güncelle
+  useEffect(() => {
+    if (selectedCourseKey && COURSES_DB[selectedCourseKey]) {
       setStudents(COURSES_DB[selectedCourseKey].students);
+    } else {
+      setStudents([]); // Tanımsız ders ise boş liste
     }
   }, [selectedCourseKey]);
 
@@ -92,45 +147,38 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
 
   const markAllPresent = () => { setStudents(prev => prev.map(s => ({ ...s, status: 'present' }))); };
   
-  // 1. DUYURU KAYDET (Firebase'e yazar)
   const handleSaveAnnouncement = async () => {
     if (!announceTitle || !selectedCourseCodeForDB()) {
       alert("Lütfen başlık giriniz.");
       return;
     }
-
     await addAnnouncementToFirebase({
-      courseCode: selectedCourseCodeForDB(), // Örn: MATH 401
+      courseCode: selectedCourseCodeForDB(),
       title: announceTitle,
       content: announceContent,
       date: new Date().toLocaleDateString(),
       priority: 'normal'
     });
-
     setShowAnnounceModal(false);
     setAnnounceTitle('');
     setAnnounceContent('');
-    alert("Announcement posted to Database!");
+    alert("Duyuru yayınlandı!");
   };
 
-  // 2. ÖĞRENCİ EKLE (Firebase'e yazar)
   const handleAddStudent = async () => {
     if (!newStudentId) {
       alert("Lütfen öğrenci numarası giriniz.");
       return;
     }
-
-    // DataManager'daki fonksiyonu çağır
     await registerStudentToCourse(newStudentId, selectedCourseCodeForDB());
-    
     setShowAddStudentModal(false);
     setNewStudentId('');
-    // Not: Listeyi anlık güncellemek için tekrar fetch yapmak gerekir, şimdilik alert yeterli.
+    alert("Öğrenci derse eklendi (Simülasyon)");
   };
 
   const handleSaveAssignment = () => { 
     setShowAssignModal(false); 
-    alert("Assignment created successfully! (Demo)"); 
+    alert("Ödev oluşturuldu (Demo)"); 
   };
 
   const handleCourseSelection = (courseName: string) => {
@@ -138,7 +186,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
     setActiveView('dashboard');
   };
 
-  // Yardımcı: Seçili dersin kodunu (MATH 401 gibi) bulur
   const selectedCourseCodeForDB = () => {
     return COURSES_DB[selectedCourseKey]?.code || '';
   };
@@ -151,15 +198,25 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
         <div className="blue-header-content">
           <h3>{selectedCourseKey}</h3>
           <div className="blue-tags">
-            <span className="blue-tag">{COURSES_DB[selectedCourseKey].code}</span>
-            <span className="blue-tag">{COURSES_DB[selectedCourseKey].time}</span>
-            <span className="blue-tag">{totalStudents} Students</span>
+            {COURSES_DB[selectedCourseKey] ? (
+              <>
+                <span className="blue-tag">{COURSES_DB[selectedCourseKey].code}</span>
+                <span className="blue-tag">{COURSES_DB[selectedCourseKey].time}</span>
+                <span className="blue-tag">{totalStudents} Students</span>
+              </>
+            ) : (
+              <span className="blue-tag">Detay Yok</span>
+            )}
           </div>
         </div>
+        
+        {/* SADECE ATANMIŞ DERSLERİ GÖSTEREN SEÇİM KUTUSU */}
         <div className="course-selector-wrapper">
-            <label style={{color:'white', fontSize:'0.8rem', display:'block', marginBottom:'5px', opacity:0.8}}>Active Session:</label>
+            <label style={{color:'white', fontSize:'0.8rem', display:'block', marginBottom:'5px', opacity:0.8}}>Aktif Ders:</label>
             <select className="header-course-select" value={selectedCourseKey} onChange={(e) => setSelectedCourseKey(e.target.value)}>
-              {Object.keys(COURSES_DB).map(courseName => (<option key={courseName} value={courseName}>{courseName}</option>))}
+              {assignedCourseNames.map(courseName => (
+                <option key={courseName} value={courseName}>{courseName}</option>
+              ))}
             </select>
         </div>
       </div>
@@ -167,51 +224,54 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
       {/* ATTENDANCE SECTION */}
       <div className="section-card">
         <div className="card-header">
-          <h3>Attendance Control</h3>
+          <h3>Yoklama Kontrolü</h3>
           <div className="header-actions">
-            {/* YENİ: Öğrenci Ekleme Butonu */}
-            <button className="secondary-btn" onClick={() => setShowAddStudentModal(true)} style={{marginRight:'10px'}}>+ Add Student</button>
-            <button className="secondary-btn" onClick={markAllPresent}>Mark All Present</button>
-            <button className="primary-black-btn">▶ Start Session</button>
+            <button className="secondary-btn" onClick={() => setShowAddStudentModal(true)} style={{marginRight:'10px'}}>+ Öğrenci Ekle</button>
+            <button className="secondary-btn" onClick={markAllPresent}>Tümünü 'Var' Say</button>
+            <button className="primary-black-btn">▶ Dersi Başlat</button>
           </div>
         </div>
         <div className="attendance-stats">
-          <div className="att-box total"><span>👥 Total</span><strong>{totalStudents}</strong></div>
-          <div className="att-box present"><span>✅ Present</span><strong>{presentCount}</strong></div>
-          <div className="att-box absent"><span>❌ Absent</span><strong>{absentCount}</strong></div>
-          <div className="att-box late"><span>⏰ Late</span><strong>{lateCount}</strong></div>
-          <div className="att-box rate"><span>📊 Rate</span><strong>%{attendanceRate}</strong></div>
+          <div className="att-box total"><span>👥 Toplam</span><strong>{totalStudents}</strong></div>
+          <div className="att-box present"><span>✅ Var</span><strong>{presentCount}</strong></div>
+          <div className="att-box absent"><span>❌ Yok</span><strong>{absentCount}</strong></div>
+          <div className="att-box late"><span>⏰ Geç</span><strong>{lateCount}</strong></div>
+          <div className="att-box rate"><span>📊 Oran</span><strong>%{attendanceRate}</strong></div>
         </div>
         <div className="student-list">
-          {students.map((student) => (
-            <div key={student.id} className="student-row">
-              <div className="student-info">
-                <div className={`student-avatar ${['Ö', 'C', 'A'].includes(student.name.charAt(0)) ? 'pink' : 'green'}`}>
-                  {student.name.substring(0, 2).toUpperCase()}
+          {students.length === 0 ? (
+             <p style={{padding:'20px', color:'#999', textAlign:'center'}}>Bu derse kayıtlı öğrenci yok veya ders seçilmedi.</p>
+          ) : (
+            students.map((student) => (
+              <div key={student.id} className="student-row">
+                <div className="student-info">
+                  <div className={`student-avatar ${['Ö', 'C', 'A'].includes(student.name.charAt(0)) ? 'pink' : 'green'}`}>
+                    {student.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div><strong>{student.name}</strong><span style={{display:'block', fontSize:'0.8rem', color:'#888'}}>{student.id}</span></div>
                 </div>
-                <div><strong>{student.name}</strong><span style={{display:'block', fontSize:'0.8rem', color:'#888'}}>{student.id}</span></div>
+                <div className="attendance-actions-group">
+                  <button className={`status-btn present ${student.status === 'present' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'present')}>Var</button>
+                  <button className={`status-btn absent ${student.status === 'absent' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'absent')}>Yok</button>
+                  <button className={`status-btn late ${student.status === 'late' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'late')}>Geç</button>
+                </div>
               </div>
-              <div className="attendance-actions-group">
-                <button className={`status-btn present ${student.status === 'present' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'present')}>Present</button>
-                <button className={`status-btn absent ${student.status === 'absent' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'absent')}>Absent</button>
-                <button className={`status-btn late ${student.status === 'late' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'late')}>Late</button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
       {/* ANNOUNCEMENTS & ASSIGNMENTS */}
       <div className="content-grid" style={{marginTop: '25px'}}>
         <div className="section-card">
-          <div className="card-header"><h3>Announcements</h3><span className="icon-btn">📢</span></div>
-          <button className="full-width-black-btn" onClick={() => setShowAnnounceModal(true)}>+ New Announcement</button>
-          <div className="announcement-item"><div className="ann-badge high">High Priority</div><h4>Midterm Exam Schedule</h4><p>The midterm exam will be held on Nov 25th at 09:00.</p></div>
+          <div className="card-header"><h3>Duyurular</h3><span className="icon-btn">📢</span></div>
+          <button className="full-width-black-btn" onClick={() => setShowAnnounceModal(true)}>+ Yeni Duyuru</button>
+          <div className="announcement-item"><div className="ann-badge high">Önemli</div><h4>Vize Sınav Takvimi</h4><p>Vize sınavı 25 Kasım saat 09:00'da yapılacaktır.</p></div>
         </div>
         <div className="section-card">
-          <div className="card-header"><h3>Assignments</h3><span className="icon-btn">📝</span></div>
-          <button className="full-width-black-btn" onClick={() => setShowAssignModal(true)}>+ Create Assignment</button>
-          <div className="teacher-assignment-item"><h4>Unit Testing Lab Exercise</h4><div className="progress-bar-bg"><div className="progress-fill" style={{width: '100%', backgroundColor: 'black'}}></div></div><div style={{display:'flex', justifyContent:'space-between', fontSize:'0.8rem', marginTop:'5px'}}><span>Submitted: 10/42</span><span style={{color:'green', fontWeight:'bold'}}>Active</span></div></div>
+          <div className="card-header"><h3>Ödevler</h3><span className="icon-btn">📝</span></div>
+          <button className="full-width-black-btn" onClick={() => setShowAssignModal(true)}>+ Ödev Oluştur</button>
+          <div className="teacher-assignment-item"><h4>Birim Testi Lab Çalışması</h4><div className="progress-bar-bg"><div className="progress-fill" style={{width: '100%', backgroundColor: 'black'}}></div></div><div style={{display:'flex', justifyContent:'space-between', fontSize:'0.8rem', marginTop:'5px'}}><span>Teslim: 10/42</span><span style={{color:'green', fontWeight:'bold'}}>Aktif</span></div></div>
         </div>
       </div>
     </div>
@@ -226,6 +286,35 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
     }
   };
 
+  // --- ANA RENDER ---
+  
+  // Yükleniyor durumu
+  if (loading) {
+    return <div className="dashboard-layout" style={{display:'flex', justifyContent:'center', alignItems:'center'}}><h3>Dersleriniz Yükleniyor...</h3></div>;
+  }
+
+  // Ders atanmamışsa gösterilecek ekran
+  if (assignedCourseNames.length === 0) {
+    return (
+      <div className="dashboard-layout">
+        <aside className="sidebar">
+            <div className="sidebar-logo"><div className="logo-icon">🎓</div><h2>UniPortal</h2></div>
+            <div className="sidebar-footer"><button onClick={onLogout} className="logout-btn">Çıkış Yap</button></div>
+        </aside>
+        <main className="main-content" style={{display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center'}}>
+            <div style={{textAlign:'center', padding:'50px', backgroundColor:'white', borderRadius:'15px', boxShadow:'0 4px 15px rgba(0,0,0,0.05)'}}>
+                <span style={{fontSize:'3rem'}}>📭</span>
+                <h2 style={{margin:'20px 0'}}>Henüz Atanmış Bir Dersiniz Yok</h2>
+                <p style={{color:'#666'}}>Sistemde derslerinizi göremiyorsanız lütfen okul müdürü veya idare ile iletişime geçin.</p>
+                <div style={{marginTop:'20px', padding:'10px', backgroundColor:'#f9f9f9', borderRadius:'5px', fontSize:'0.9rem'}}>
+                    <strong>Giriş yapan hesap:</strong> {currentUserEmail}
+                </div>
+            </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
@@ -233,25 +322,34 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
         
         <nav className="sidebar-menu">
           <div className={`menu-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}>
-            <span className="icon">🏠</span> Dashboard
+            <span className="icon">🏠</span> Panel
           </div>
           <div className={`menu-item ${activeView === 'courses' ? 'active' : ''}`} onClick={() => setActiveView('courses')}>
-            <span className="icon">📘</span> My Courses
+            <span className="icon">📘</span> Derslerim
           </div>
           <div className={`menu-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}>
-            <span className="icon">📅</span> Calendar
+            <span className="icon">📅</span> Takvim
           </div>
         </nav>
         
         <div className="sidebar-footer">
-          <button onClick={onLogout} className="logout-btn">🚪 Logout</button>
+          <button onClick={onLogout} className="logout-btn">🚪 Çıkış</button>
         </div>
       </aside>
 
       <main className="main-content">
         <header className="top-header">
-          <div className="page-title-group"><h2>Instructor Portal</h2><p>Manage your courses and student attendance</p></div>
-          <div className="user-profile"><div className="notification-icon">🔔</div><div className="user-info"><div className="details"><span className="u-name">Dr. Burçak Çelt</span><span className="u-role">Instructor</span></div><div className="avatar">B</div></div></div>
+          <div className="page-title-group"><h2>Akademisyen Portalı</h2><p>Derslerinizi ve yoklamaları buradan yönetin</p></div>
+          <div className="user-profile">
+            <div className="notification-icon">🔔</div>
+            <div className="user-info">
+                <div className="details">
+                    <span className="u-name">{currentUserEmail}</span>
+                    <span className="u-role">Öğretmen</span>
+                </div>
+                <div className="avatar">{currentUserEmail.charAt(0).toUpperCase()}</div>
+            </div>
+          </div>
         </header>
 
         {renderContent()}
@@ -262,30 +360,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
         {showAnnounceModal && (
           <div className="modal-overlay">
             <div className="modal-content">
-              <h3>📢 Post Announcement</h3>
+              <h3>📢 Duyuru Yayınla</h3>
               <div className="form-group">
-                <label>Title</label>
-                <input 
-                  type="text" 
-                  className="modal-input" 
-                  placeholder="e.g. Exam Dates" 
-                  value={announceTitle} 
-                  onChange={(e) => setAnnounceTitle(e.target.value)} 
-                />
+                <label>Başlık</label>
+                <input type="text" className="modal-input" placeholder="Örn: Sınav Tarihleri" value={announceTitle} onChange={(e) => setAnnounceTitle(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>Content</label>
-                <textarea 
-                  className="modal-input" 
-                  rows={4} 
-                  placeholder="Write details here..."
-                  value={announceContent}
-                  onChange={(e) => setAnnounceContent(e.target.value)}
-                ></textarea>
+                <label>İçerik</label>
+                <textarea className="modal-input" rows={4} placeholder="Detayları buraya yazın..." value={announceContent} onChange={(e) => setAnnounceContent(e.target.value)}></textarea>
               </div>
               <div className="modal-actions">
-                <button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>Cancel</button>
-                <button className="primary-black-btn" onClick={handleSaveAnnouncement}>Post</button>
+                <button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>İptal</button>
+                <button className="primary-black-btn" onClick={handleSaveAnnouncement}>Yayınla</button>
               </div>
             </div>
           </div>
@@ -295,55 +381,38 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout }) 
         {showAssignModal && (
           <div className="modal-overlay">
             <div className="modal-content">
-              <h3>📝 Create Assignment</h3>
+              <h3>📝 Ödev Oluştur</h3>
               <div className="form-group">
-                <label>Title</label>
-                <input 
-                  type="text" 
-                  className="modal-input" 
-                  placeholder="e.g. Final Project Report" 
-                  value={assignTitle}
-                  onChange={(e) => setAssignTitle(e.target.value)}
-                />
+                <label>Başlık</label>
+                <input type="text" className="modal-input" placeholder="Örn: Final Projesi" value={assignTitle} onChange={(e) => setAssignTitle(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>Due Date</label>
-                <input 
-                  type="date" 
-                  className="modal-input"
-                  value={assignDate}
-                  onChange={(e) => setAssignDate(e.target.value)}
-                />
+                <label>Son Teslim</label>
+                <input type="date" className="modal-input" value={assignDate} onChange={(e) => setAssignDate(e.target.value)} />
               </div>
               <div className="modal-actions">
-                <button className="secondary-btn" onClick={() => setShowAssignModal(false)}>Cancel</button>
-                <button className="primary-black-btn" onClick={handleSaveAssignment}>Create</button>
+                <button className="secondary-btn" onClick={() => setShowAssignModal(false)}>İptal</button>
+                <button className="primary-black-btn" onClick={handleSaveAssignment}>Oluştur</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* 3. ÖĞRENCİ EKLEME MODALI (YENİ) */}
+        {/* 3. ÖĞRENCİ EKLEME MODALI */}
         {showAddStudentModal && (
           <div className="modal-overlay">
             <div className="modal-content">
-              <h3>👤 Add Student to Course</h3>
+              <h3>👤 Derse Öğrenci Ekle</h3>
               <p style={{marginBottom: '15px', color:'#666', fontSize:'0.9rem'}}>
-                Adding to: <strong>{selectedCourseKey}</strong>
+                Eklenen Ders: <strong>{selectedCourseKey}</strong>
               </p>
               <div className="form-group">
-                <label>Student School ID</label>
-                <input 
-                  type="text" 
-                  className="modal-input" 
-                  placeholder="e.g. 220706010" 
-                  value={newStudentId}
-                  onChange={(e) => setNewStudentId(e.target.value)}
-                />
+                <label>Öğrenci Numarası</label>
+                <input type="text" className="modal-input" placeholder="Örn: 220706010" value={newStudentId} onChange={(e) => setNewStudentId(e.target.value)} />
               </div>
               <div className="modal-actions">
-                <button className="secondary-btn" onClick={() => setShowAddStudentModal(false)}>Cancel</button>
-                <button className="primary-black-btn" onClick={handleAddStudent}>Add Student</button>
+                <button className="secondary-btn" onClick={() => setShowAddStudentModal(false)}>İptal</button>
+                <button className="primary-black-btn" onClick={handleAddStudent}>Ekle</button>
               </div>
             </div>
           </div>

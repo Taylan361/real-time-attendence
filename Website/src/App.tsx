@@ -3,42 +3,43 @@ import './App.css';
 import LoginPage from './LoginPage'; 
 import { Dashboard } from './Dashboard';
 import { TeacherDashboard } from './TeacherDashboard';
-// initDB satırını sildik çünkü artık Firebase kullanıyoruz.
+import { PrincipalDashboard } from './PrincipalDashboard'; // Yeni oluşturacağız
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
+  const [userRole, setUserRole] = useState<'student' | 'teacher' | 'principal'>('student');
+  const [currentId, setCurrentId] = useState<string>(''); // Öğrenci No veya Email
 
   useEffect(() => {
     // Sayfa yenilendiğinde oturumu hatırla
     const savedLogin = localStorage.getItem('savedLogin');
-    if (savedLogin) {
-      // Basit kontrol: Email formatıysa öğretmendir
-      if (savedLogin.includes('@')) {
-        setUserRole('teacher');
-      } else {
-        setUserRole('student');
-      }
+    const savedRole = localStorage.getItem('savedRole'); // Rolü de kaydedelim
+
+    if (savedLogin && savedRole) {
+      setCurrentId(savedLogin);
+      // @ts-ignore
+      setUserRole(savedRole);
       setIsLoggedIn(true);
     }
   }, []);
 
-  // Login sayfasından gelen rolü karşılayan fonksiyon
-  const handleLogin = (role: string) => {
-    // Login sayfası 'admin' gönderirse biz onu 'teacher' olarak işleyelim
-    if (role === 'admin' || role === 'teacher') {
-      setUserRole('teacher');
-    } else {
-      setUserRole('student');
-    }
+  const handleLogin = (role: 'student' | 'teacher' | 'principal', id: string) => {
+    setUserRole(role);
+    setCurrentId(id);
     setIsLoggedIn(true);
+    
+    // Oturumu kaydet
+    localStorage.setItem('savedLogin', id);
+    localStorage.setItem('savedRole', role);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('savedLogin');
+    localStorage.removeItem('savedRole');
     localStorage.removeItem('currentStudentId');
     setIsLoggedIn(false);
     setUserRole('student');
+    setCurrentId('');
   };
 
   return (
@@ -46,12 +47,11 @@ function App() {
       {!isLoggedIn ? (
         <LoginPage onLoginSuccess={handleLogin} />
       ) : (
-        // Rol kontrolüne göre doğru paneli aç
-        userRole === 'teacher' ? (
-          <TeacherDashboard onLogout={handleLogout} />
-        ) : (
-          <Dashboard onLogout={handleLogout} />
-        )
+        <>
+          {userRole === 'principal' && <PrincipalDashboard onLogout={handleLogout} />}
+          {userRole === 'teacher' && <TeacherDashboard onLogout={handleLogout} currentUserEmail={currentId} />}
+          {userRole === 'student' && <Dashboard onLogout={handleLogout} />}
+        </>
       )}
     </div>
   );
