@@ -1,53 +1,57 @@
 import { useState, useEffect } from 'react';
-import LoginPage from './LoginPage';
+import './App.css';
+import LoginPage from './LoginPage'; 
 import { Dashboard } from './Dashboard';
 import { TeacherDashboard } from './TeacherDashboard';
+import { PrincipalDashboard } from './PrincipalDashboard'; // Yeni oluşturacağız
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<'student' | 'admin'>('student');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<'student' | 'teacher' | 'principal'>('student');
+  const [currentId, setCurrentId] = useState<string>(''); // Öğrenci No veya Email
 
   useEffect(() => {
+    // Sayfa yenilendiğinde oturumu hatırla
     const savedLogin = localStorage.getItem('savedLogin');
-    
-    if (savedLogin) {
-      const userRecord = localStorage.getItem(savedLogin);
-      if (userRecord) {
-        const user = JSON.parse(userRecord);
-        setIsAuthenticated(true);
-        setUserRole(user.role); // Kayıtlı rolü yükle
-      }
+    const savedRole = localStorage.getItem('savedRole'); // Rolü de kaydedelim
+
+    if (savedLogin && savedRole) {
+      setCurrentId(savedLogin);
+      // @ts-ignore
+      setUserRole(savedRole);
+      setIsLoggedIn(true);
     }
-    setIsLoading(false);
   }, []);
 
-  // GÜNCELLEME: Rolü doğrudan parametre olarak alıyoruz
-  const handleLoginSuccess = (role: 'student' | 'admin') => {
-    setUserRole(role); // Gelen rolü state'e yaz
-    setIsAuthenticated(true);
+  const handleLogin = (role: 'student' | 'teacher' | 'principal', id: string) => {
     setUserRole(role);
+    setCurrentId(id);
+    setIsLoggedIn(true);
+    
+    // Oturumu kaydet
+    localStorage.setItem('savedLogin', id);
+    localStorage.setItem('savedRole', role);
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
+    localStorage.removeItem('savedLogin');
+    localStorage.removeItem('savedRole');
+    localStorage.removeItem('currentStudentId');
+    setIsLoggedIn(false);
     setUserRole('student');
+    setCurrentId('');
   };
 
-  if (isLoading) {
-    return <div style={{display:'flex', height:'100vh', justifyContent:'center', alignItems:'center'}}>Yükleniyor...</div>;
-  }
-
   return (
-    <div>
-      {!isAuthenticated ? (
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
+    <div className="app-container">
+      {!isLoggedIn ? (
+        <LoginPage onLoginSuccess={handleLogin} />
       ) : (
-        userRole === 'admin' ? (
-          <TeacherDashboard onLogout={handleLogout} />
-        ) : (
-          <Dashboard onLogout={handleLogout} />
-        )
+        <>
+          {userRole === 'principal' && <PrincipalDashboard onLogout={handleLogout} />}
+          {userRole === 'teacher' && <TeacherDashboard onLogout={handleLogout} currentUserEmail={currentId} />}
+          {userRole === 'student' && <Dashboard onLogout={handleLogout} />}
+        </>
       )}
     </div>
   );

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './LoginPage.css';
+import { getStudentData, completeStudentRegistration } from './DataManager';
+import { db } from './firebase'; // Firebase bağlantısı
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 // Resim Importları
 import logoImg from './assets/logo.jpg';
@@ -14,6 +17,7 @@ const translations = {
     portalDesc: "Giriş türünü seçiniz",
     studentLogin: "🎓 Öğrenci Girişi",
     adminLogin: "👨‍🏫 Akademisyen Girişi",
+    principalBtn: "🏛️ Müdür Girişi",
     registerLink: "Hesabınız yok mu?",
     registerClick: "Kayıt Ol",
     back: "← Geri Dön",
@@ -22,8 +26,9 @@ const translations = {
     email: "E-posta Adresi",
     studentNo: "Öğrenci Numarası",
     password: "Şifre",
-    rememberMe: "Beni Hatırla",
+    RememberMe: "Beni Hatırla",
     loginBtn: "Giriş Yap",
+    checking: "Kontrol Ediliyor...",
     registerTitle: "Yeni Kayıt",
     registerDesc: "Lütfen bilgilerinizi eksiksiz doldurun",
     name: "Ad",
@@ -37,6 +42,8 @@ const translations = {
     navAbout: "Proje Hakkında",
     aboutTitle: "Proje Detayları",
     aboutDesc: "Sistem ve geliştirici ekip hakkında bilgiler",
+    
+    // --- EKSİK OLAN KISIMLAR BURADA ---
     sectOverview: "Genel Bakış",
     txtOverview: "Bu proje, sınıflardaki öğrenci yoklamasını gerçek zamanlı yüz tanıma teknolojisi kullanarak otomatize etmek için tasarlanmıştır. Amacı doğruluğu artırmak ve akademisyenlere zaman kazandırmaktır.",
     sectObjectives: "Proje Hedefleri",
@@ -45,7 +52,13 @@ const translations = {
     obj3: "Raporlama ve bildirim sistemi",
     sectTeam: "Geliştirici Ekip",
     sectTech: "Metodoloji & Teknoloji",
-    txtTech: "Bu proje Scrum metodolojisi kullanılarak geliştirilmiş ve Jira üzerinden takip edilmiştir."
+    txtTech: "Bu proje Scrum metodolojisi kullanılarak geliştirilmiş ve Jira üzerinden takip edilmiştir.",
+    
+    errNotFound: "Öğrenci sistemde bulunamadı! Öğretmeninizden sizi eklemesini isteyin.",
+    errGenLogin: "Giriş başarısız.",
+    errInvalidPass: "Hatalı şifre!",
+    errRegFirst: "Kaydınız tamamlanmamış. Lütfen 'Kayıt Ol' butonuna basarak şifrenizi oluşturun.",
+    successReg: "Kayıt Başarılı! Şimdi giriş yapabilirsiniz."
   },
   en: {
     uniName: "MALTEPE UNIVERSITY",
@@ -54,6 +67,7 @@ const translations = {
     portalDesc: "Select login type",
     studentLogin: "🎓 Student Login",
     adminLogin: "👨‍🏫 Instructor Login",
+    principalBtn: "🏛️ Principal Login",
     registerLink: "No account?",
     registerClick: "Register",
     back: "← Go Back",
@@ -62,8 +76,9 @@ const translations = {
     email: "Email Address",
     studentNo: "Student ID Number",
     password: "Password",
-    rememberMe: "Remember Me",
+    RememberMe: "Remember Me",
     loginBtn: "Login",
+    checking: "Checking...",
     registerTitle: "New Registration",
     registerDesc: "Please fill in your details",
     name: "Name",
@@ -77,6 +92,8 @@ const translations = {
     navAbout: "About Project",
     aboutTitle: "Project Details",
     aboutDesc: "Information about the system and team",
+    
+    // --- EKSİK OLAN KISIMLAR BURADA ---
     sectOverview: "Overview",
     txtOverview: "The Real-Time Attendance System is designed to automate student attendance monitoring using facial recognition. It aims to improve accuracy and save time for instructors.",
     sectObjectives: "Project Objectives",
@@ -85,16 +102,26 @@ const translations = {
     obj3: "Reporting and notifications",
     sectTeam: "Development Team",
     sectTech: "Methodology & Tech",
-    txtTech: "This project is developed using Scrum methodology and tracked via Jira."
+    txtTech: "This project is developed using Scrum methodology and tracked via Jira.",
+    
+    errNotFound: "Student not found in system! Ask your instructor to add you.",
+    errGenLogin: "Login failed.",
+    errInvalidPass: "Invalid password!",
+    errRegFirst: "Registration incomplete. Please click 'Register' to set your password.",
+    successReg: "Registration Successful! You can now login."
   }
 };
+// --- GEREKLİ IMPORTLARI SAYFANIN EN BAŞINA EKLEDİĞİNDEN EMİN OL:
+// import { db } from './firebase';
+// import { doc, getDoc, setDoc } from "firebase/firestore";
 
 type ViewState = 'selection' | 'student' | 'admin' | 'register' | 'about';
 type NotificationType = 'success' | 'error' | null;
 type LangType = 'tr' | 'en';
 
 interface LoginPageProps {
-  onLoginSuccess: (role: 'student' | 'admin') => void;
+  // App.tsx'teki yapıya uyması için id parametresini ekledik
+  onLoginSuccess: (role: 'student' | 'teacher' | 'principal', id: string) => void;
 }
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
@@ -103,13 +130,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [lang, setLang] = useState<LangType>('tr'); 
   const t = translations[lang];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Form State'leri
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
+  
+  // DİKKAT: Büyük/Küçük harf uyumu için senin kodundaki yapıyı korudum
   const [rememberMe, setRememberMe] = useState(false);
+  
   const [registerRole, setRegisterRole] = useState<'student' | 'admin'>('student');
   const [adminSecret, setAdminSecret] = useState('');
 
@@ -141,52 +173,136 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setView('selection');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // --- MÜDÜR GİRİŞİ FONKSİYONU (YENİ) ---
+  const handlePrincipalLogin = () => {
+    // Müdür şifresiz giriyor, direkt App.tsx'e bildiriyoruz
+    onLoginSuccess('principal', 'mudur@maltepe.edu.tr');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // --- KAYIT OLMA İŞLEMİ ---
     if (view === 'register') {
       if (registerRole === 'admin' && adminSecret !== 'MALT2024') return showToast(lang === 'tr' ? 'Hatalı Kurum Kodu!' : 'Invalid Institution Code!', 'error');
-      if (registerRole === 'student' && studentNumber.length !== 9) return showToast(lang === 'tr' ? 'Öğrenci numarası 9 haneli olmalı!' : 'Student ID must be 9 digits!', 'error');
-
-      const uniqueKey = registerRole === 'student' ? studentNumber : email;
-      if (localStorage.getItem(uniqueKey)) return showToast(lang === 'tr' ? 'Kullanıcı zaten kayıtlı!' : 'User already registered!', 'error');
-
-      const newUser = { name, surname, email, studentNumber: registerRole === 'student' ? studentNumber : null, password, role: registerRole };
-      localStorage.setItem(uniqueKey, JSON.stringify(newUser));
-      showToast(lang === 'tr' ? 'Kayıt Başarılı! Yönlendiriliyorsunuz...' : 'Registration Successful! Redirecting...', 'success');
-    } else {
-      let searchKey = '';
+      
+      // 1. ÖĞRENCİ KAYDI (Mevcut Sistem)
+      if (registerRole === 'student') {
+        if (studentNumber.length < 3) return showToast(lang === 'tr' ? 'Geçerli bir numara giriniz!' : 'Enter valid ID!', 'error');
+        setIsLoading(true);
+        try {
+          const result = await completeStudentRegistration(studentNumber, name, surname, password);
+          if (result.success) {
+            showToast(result.message, 'success');
+          } else {
+            showToast(result.message, 'error');
+          }
+        } catch (error) {
+          console.error(error);
+          showToast("Bağlantı hatası oluştu.", 'error');
+        } finally {
+          setIsLoading(false);
+        }
+      } 
+      // 2. AKADEMİSYEN KAYDI (Firebase'e Yazılacak - YENİ)
+      else {
+        setIsLoading(true);
+        try {
+          // Firestore'a kaydet
+          await setDoc(doc(db, "teachers", email), {
+            name,
+            surname,
+            email,
+            password, // Güvenlik notu: Gerçek projede hashlenmeli
+            role: 'teacher',
+            assignedCourses: []
+          });
+          
+          showToast(lang === 'tr' ? 'Kayıt Başarılı!' : 'Registration Successful!', 'success');
+        } catch (error) {
+          console.error("Firebase Hatası:", error);
+          showToast("Kayıt sırasında hata oluştu.", 'error');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    } 
+    
+    // --- GİRİŞ YAPMA İŞLEMİ ---
+    else {
+      // 1. ÖĞRENCİ GİRİŞİ (Mevcut Sistem)
       if (view === 'student') {
         if (!studentNumber) return showToast(lang === 'tr' ? 'Öğrenci No Gerekli' : 'ID Required', 'error');
-        searchKey = studentNumber;
-      } else {
+        
+        setIsLoading(true);
+        try {
+          const studentData = await getStudentData(studentNumber);
+
+          if (studentData) {
+            // @ts-ignore
+            if (studentData.isRegistered === false) {
+               showToast(t.errRegFirst || "Kayıt tamamlanmamış.", 'error');
+               setIsLoading(false);
+               return;
+            }
+            // @ts-ignore
+            if (studentData.password && studentData.password !== password) {
+               showToast(t.errInvalidPass, 'error');
+               setIsLoading(false);
+               return;
+            }
+
+            localStorage.setItem('currentStudentId', studentData.studentId);
+            if (rememberMe) localStorage.setItem('savedLogin', studentNumber);
+            
+            // App.tsx'e ID ile bildiriyoruz
+            onLoginSuccess('student', studentNumber);
+
+          } else {
+            showToast(t.errNotFound, 'error');
+          }
+        } catch (error) {
+          console.error(error);
+          showToast(t.errGenLogin, 'error');
+        } finally {
+          setIsLoading(false);
+        }
+      } 
+      
+      // 2. AKADEMİSYEN GİRİŞİ (Firebase'den Kontrol - YENİ)
+      else if (view === 'admin') {
         if (!email) return showToast(lang === 'tr' ? 'Email Gerekli' : 'Email Required', 'error');
-        searchKey = email;
+        
+        setIsLoading(true);
+        try {
+          // Firebase'den öğretmeni çek
+          const docRef = doc(db, "teachers", email);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const teacherData = docSnap.data();
+            if (teacherData.password === password) {
+              if (rememberMe) localStorage.setItem('savedLogin', email);
+              // Başarılı giriş -> App.tsx
+              onLoginSuccess('teacher', email);
+            } else {
+              showToast(t.errInvalidPass, 'error');
+            }
+          } else {
+            showToast("Kayıtlı öğretmen bulunamadı.", 'error');
+          }
+        } catch (error) {
+          console.error("Login Hatası:", error);
+          showToast(t.errGenLogin, 'error');
+        } finally {
+          setIsLoading(false);
+        }
       }
-
-      const userRecord = localStorage.getItem(searchKey);
-      if (!userRecord) return showToast(lang === 'tr' ? 'Kullanıcı bulunamadı!' : 'User not found!', 'error');
-
-      const user = JSON.parse(userRecord);
-      if (user.password !== password) return showToast(lang === 'tr' ? 'Hatalı şifre!' : 'Wrong password!', 'error');
-      
-      if (view === 'admin' && user.role !== 'admin') return showToast(lang === 'tr' ? 'Bu alandan sadece Akademisyenler girebilir!' : 'Unauthorized Access!', 'error');
-      if (view === 'student' && user.role !== 'student') return showToast(lang === 'tr' ? 'Lütfen akademisyen girişini kullanın.' : 'Please use instructor login.', 'error');
-
-      showToast(lang === 'tr' ? `Giriş Başarılı! Hoşgeldin ${user.name}` : `Login Successful! Welcome ${user.name}`, 'success');
-      
-      if (rememberMe) localStorage.setItem('savedLogin', searchKey); 
-      else localStorage.removeItem('savedLogin');
-
-      // Gereksiz değişkenleri kaldırdık, direkt kullanıyoruz
-      setTimeout(() => {
-        onLoginSuccess(user.role); 
-      }, 1000);
     }
   };
 
   const NotificationModal = () => (
-    <div className="notification-overlay">
+    <div className="notification-overlay" style={{zIndex: 9999}}> 
       <div className="notification-box">
         <div className={`notification-icon ${notification.type === 'success' ? 'icon-success' : 'icon-error'}`}>
           {notification.type === 'success' ? '✓' : '!'}
@@ -270,7 +386,19 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <button className="role-button" onClick={() => setView('student')}>{t.studentLogin}</button>
         <button className="role-button" onClick={() => setView('admin')}>{t.adminLogin}</button>
       </div>
-      <div className="register-link"> {t.registerLink} <span onClick={() => setView('register')}>{t.registerClick}</span> </div>
+      
+      {/* --- MÜDÜR GİRİŞİ BUTONU (YENİ EKLENDİ) --- */}
+      <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+          <button 
+            className="role-button" 
+            onClick={handlePrincipalLogin}
+            style={{ backgroundColor: '#2d3436', color: 'white', border: 'none' }}
+          >
+            {t.principalBtn || "🏛️ Müdür Girişi"}
+          </button>
+      </div>
+
+      <div className="register-link" style={{marginTop:'15px'}}> {t.registerLink} <span onClick={() => setView('register')}>{t.registerClick}</span> </div>
     </>
   );
 
@@ -284,8 +412,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {view === 'student' ? <input type="text" placeholder="220706010" value={studentNumber} onChange={(e) => setStudentNumber(e.target.value)} required /> : <input type="email" placeholder="admin@maltepe.edu.tr" value={email} onChange={(e) => setEmail(e.target.value)} required />}
         </div>
         <div className="form-group"><label>{t.password}</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-        <div className="remember-forgot"><label className="remember-me"><input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />{t.rememberMe}</label></div>
-        <button type="submit" className="login-button">{t.loginBtn}</button>
+        
+        {/* Remember Me */}
+        <div className="remember-forgot">
+            <label className="remember-me">
+                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+                {t.RememberMe}
+            </label>
+        </div>
+        
+        <button type="submit" className="login-button" disabled={isLoading}>
+          {isLoading ? t.checking : t.loginBtn}
+        </button>
       </form>
     </>
   );
