@@ -1,7 +1,7 @@
 import { db } from './firebase';
 import { 
   collection, getDocs, addDoc, updateDoc, doc, 
-  query, where, arrayUnion , orderBy, setDoc,  // <-- BUNU EKLE
+  query, where, arrayUnion, setDoc, // DÜZELTME: 'orderBy' buradan silindi.
   getDoc, onSnapshot
 } from 'firebase/firestore';
 

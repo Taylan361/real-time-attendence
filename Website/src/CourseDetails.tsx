@@ -6,7 +6,9 @@ interface CourseDetailsProps {
   onBack: () => void;
 }
 
-export const CourseDetails: React.FC<CourseDetailsProps> = ({ courseId, onBack }) => {
+// DÜZELTME BURADA: ({ courseId, onBack }) yerine sadece ({ onBack }) yazdık.
+// courseId hala interface'de var ama kullanmadığımız için buradan sildik.
+export const CourseDetails: React.FC<CourseDetailsProps> = ({ onBack }) => {
   const courseData = {
     title: "Software Validation and Testing",
     code: "MATH 401",

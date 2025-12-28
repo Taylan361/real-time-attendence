@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
-import { TeacherCalendar } from './TeacherCalendar'; // Bu dosyalar sende varsa kalsın, yoksa hata verebilir, yorum satırına alabilirsin.
+import { TeacherCalendar } from './TeacherCalendar';
+// Bu dosyalar sende varsa kalsın, yoksa hata verebilir, yorum satırına alabilirsin.
 import { TeacherCourses } from './TeacherCourses';
 import { 
   addAnnouncementToFirebase, 
   registerStudentToCourse, 
   addAssignmentToFirebase, 
-  getStudentsByCourse,          // <-- YENİ
-  gradeAssignment,              // <-- YENİ
-  toggleAttendanceSession, // <-- YENİ
+  getStudentsByCourse,
+  gradeAssignment,
+  toggleAttendanceSession,
   listenToRealTimeAttendance,
   listenToRealTimeAssignments
 } from './DataManager';
-import { injectSampleData } from './DataManager'; // <-- Bunu ekle
-
+import { injectSampleData } from './DataManager';
 
 // Firebase importları
 import { db } from './firebase';
@@ -21,11 +21,13 @@ import { doc, getDoc } from "firebase/firestore";
 
 interface TeacherDashboardProps {
   onLogout: () => void;
-  currentUserEmail: string; // Hangi öğretmenin giriş yaptığını bilmemiz lazım
+  currentUserEmail: string;
+  // Hangi öğretmenin giriş yaptığını bilmemiz lazım
 }
 
 interface Student {
-  id: number | string; // <-- "number" yerine "number | string" yaptık
+  id: number | string;
+  // "number" yerine "number | string" yaptık
   name: string;
   status: 'present' | 'absent' | 'late';
 }
@@ -76,12 +78,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
   
   // Müdürün atadığı derslerin listesi
   const [assignedCourseNames, setAssignedCourseNames] = useState<string[]>([]);
-
   // Modal Görünürlükleri
   const [showAnnounceModal, setShowAnnounceModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
-
   // Form Verileri
   const [announceTitle, setAnnounceTitle] = useState('');
   const [announceContent, setAnnounceContent] = useState('');
@@ -89,7 +89,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
   const [assignDate, setAssignDate] = useState('');
   const [newStudentId, setNewStudentId] = useState('');
   // --- YENİ EKLENEN STATELER ---
-  const [courseAssignments, setCourseAssignments] = useState<any[]>([]); // Ödev listesi
+  const [courseAssignments, setCourseAssignments] = useState<any[]>([]);
+  // Ödev listesi
   const [showGradingModal, setShowGradingModal] = useState(false);       // Notlandırma penceresi
   // Seçili Ders Verileri (Başlangıçta boş)
   const [selectedCourseKey, setSelectedCourseKey] = useState('');
@@ -108,6 +109,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
 
         if (docSnap.exists()) {
           const data = docSnap.data();
+          
           const myCourses = data.assignedCourses || []; // Örn: ['Software Validation', 'Physics']
           
           setAssignedCourseNames(myCourses);
@@ -137,7 +139,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
     fetchAssignedCourses();
   }, [currentUserEmail]);
 
-// --- 2. GERÇEK ÖĞRENCİLERİ VE CANLI ÖDEVLERİ ÇEKME ---
+  // --- 2. GERÇEK ÖĞRENCİLERİ VE CANLI ÖDEVLERİ ÇEKME ---
   useEffect(() => {
     const code = selectedCourseCodeForDB(); // Örn: "MATH 401"
     if (!code) return;
@@ -180,7 +182,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
         );
         setCourseAssignments(filtered);
     });
-
     // Cleanup: Sayfa değişirse dinlemeyi durdur
     return () => {
         unsubscribeAssignments();
@@ -198,6 +199,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
     const unsubscribe = listenToRealTimeAttendance(code, (presentStudentIds) => {
         
         setStudents(prevStudents => prevStudents.map(student => {
+            
             // Eğer öğrencinin ID'si gelen listede varsa durumunu 'present' yap
             if (presentStudentIds.includes(student.id.toString())) {
                 return { ...student, status: 'present' };
@@ -208,6 +210,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
 
     // Sayfa değişirse dinlemeyi durdur (Performans için)
     return () => unsubscribe();
+  
   }, [selectedCourseKey]);
   // İstatistikler
   const totalStudents = students.length;
@@ -215,13 +218,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
   const absentCount = students.filter(s => s.status === 'absent').length;
   const lateCount = students.filter(s => s.status === 'late').length;
   const attendanceRate = totalStudents > 0 ? Math.round(((presentCount + (lateCount * 0.5)) / totalStudents) * 100) : 0;
-
   // --- FONKSİYONLAR ---
 const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent' | 'late') => {
     setStudents(prev => prev.map(student => student.id === id ? { ...student, status: newStatus } : student));
-};
+  };
   const markAllPresent = () => { setStudents(prev => prev.map(s => ({ ...s, status: 'present' }))); };
-  
   const handleSaveAnnouncement = async () => {
     if (!announceTitle || !selectedCourseCodeForDB()) {
       alert("Lütfen başlık giriniz.");
@@ -245,7 +246,6 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
     // DataManager'daki fonksiyonu çağır
     await toggleAttendanceSession(selectedCourseCodeForDB(), newState);
     setIsSessionActive(newState);
-    
     if(newState) {
         alert("📡 Yoklama sistemi açıldı! Öğrenciler artık bildirim alıyor.");
     } else {
@@ -262,7 +262,6 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
     setNewStudentId('');
     alert("Öğrenci derse eklendi (Simülasyon)");
   };
-
   // --- ÖDEV KAYDETME İŞLEMİ (GÜNCELLENDİ) ---
   const handleSaveAssignment = async () => {
     // 1. Kontrol: Başlık veya tarih boş mu?
@@ -284,26 +283,23 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
       title: assignTitle,
       dueDate: assignDate
     });
-
     if (result.success) {
       alert("✅ Ödev başarıyla oluşturuldu ve sisteme kaydedildi!");
-      setShowAssignModal(false); // Modalı kapat
+      setShowAssignModal(false);
+      // Modalı kapat
       setAssignTitle('');        // Formu temizle
       setAssignDate('');
     } else {
       alert("❌ Hata oluştu. Lütfen tekrar deneyin.");
     }
   };
-
   const handleCourseSelection = (courseName: string) => {
     setSelectedCourseKey(courseName);
     setActiveView('dashboard');
   };
-
   const selectedCourseCodeForDB = () => {
     return COURSES_DB[selectedCourseKey]?.code || '';
   };
-
   // --- DASHBOARD İÇERİĞİ ---
   const renderDashboardContent = () => (
     <div className="fade-in">
@@ -328,7 +324,7 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
         <div className="course-selector-wrapper">
             <label style={{color:'white', fontSize:'0.8rem', display:'block', marginBottom:'5px', opacity:0.8}}>Aktif Ders:</label>
             <select className="header-course-select" value={selectedCourseKey} onChange={(e) => setSelectedCourseKey(e.target.value)}>
-              {assignedCourseNames.map(courseName => (
+               {assignedCourseNames.map(courseName => (
                 <option key={courseName} value={courseName}>{courseName}</option>
               ))}
             </select>
@@ -356,6 +352,7 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
                 🛠️ Veri Yükle
             </button>
             {/* ---------------------------------------------------- */}
+            
             <button className="primary-black-btn">▶ Dersi Başlat</button>
             <button 
     className={isSessionActive ? "primary-black-btn" : "secondary-btn"} 
@@ -380,11 +377,13 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
             students.map((student) => (
               <div key={student.id} className="student-row">
                 <div className="student-info">
+                  
                   <div className={`student-avatar ${['Ö', 'C', 'A'].includes(student.name.charAt(0)) ? 'pink' : 'green'}`}>
                     {student.name.substring(0, 2).toUpperCase()}
                   </div>
                   <div><strong>{student.name}</strong><span style={{display:'block', fontSize:'0.8rem', color:'#888'}}>{student.id}</span></div>
                 </div>
+                
                 <div className="attendance-actions-group">
                   <button className={`status-btn present ${student.status === 'present' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'present')}>Var</button>
                   <button className={`status-btn absent ${student.status === 'absent' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'absent')}>Yok</button>
@@ -406,14 +405,13 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
         <div className="section-card">
           <div className="card-header"><h3>Ödevler</h3><span className="icon-btn">📝</span></div>
           <div style={{display:'flex', gap:'5px', marginBottom:'10px'}}>
-          <button className="secondary-btn" onClick={() => setShowGradingModal(true)}>🔍 Notlandır</button>
+            <button className="secondary-btn" onClick={() => setShowGradingModal(true)}>🔍 Notlandır</button>
           </div>
           <div className="teacher-assignment-item"><h4>Birim Testi Lab Çalışması</h4><div className="progress-bar-bg"><div className="progress-fill" style={{width: '100%', backgroundColor: 'black'}}></div></div><div style={{display:'flex', justifyContent:'space-between', fontSize:'0.8rem', marginTop:'5px'}}><span>Teslim: 10/42</span><span style={{color:'green', fontWeight:'bold'}}>Aktif</span></div></div>
         </div>
       </div>
-<div className="teacher-assignment-item"><h4>Aktif Ödev Sayısı: {courseAssignments.length}</h4></div>
-        </div>
-
+      <div className="teacher-assignment-item"><h4>Aktif Ödev Sayısı: {courseAssignments.length}</h4></div>
+    </div>
   );
 
   const renderContent = () => {
@@ -482,7 +480,7 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
           <div className="user-profile">
             <div className="notification-icon">🔔</div>
             <div className="user-info">
-                <div className="details">
+               <div className="details">
                     <span className="u-name">{currentUserEmail}</span>
                     <span className="u-role">Öğretmen</span>
                 </div>
@@ -511,7 +509,6 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
               <div className="modal-actions">
                 <button className="secondary-btn" onClick={() => setShowAnnounceModal(false)}>İptal</button>
                 <button className="primary-black-btn" onClick={handleSaveAnnouncement}>Yayınla</button>
-                
               </div>
             </div>
           </div>
@@ -564,7 +561,7 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
               <div style={{borderBottom:'1px solid #eee', paddingBottom:'15px', marginBottom:'15px'}}>
                   <h3 style={{margin:0}}>⚖️ Adil Notlandırma Sistemi</h3>
                   <p style={{margin:'5px 0 0 0', color:'#666', fontSize:'0.9rem'}}>
-                      Ders: <strong>{selectedCourseCodeForDB()}</strong> | 
+                      Ders: <strong>{selectedCourseCodeForDB()}</strong> |
                       <span style={{color:'#d32f2f', marginLeft:'5px'}}>
                          ⚠️ İsimler gizlenmiştir (Blind Grading)
                       </span>
@@ -582,8 +579,8 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
                         // --- DURUM KONTROLLERİ ---
                         const isGraded = assign.status === 'graded';
                         const isSubmitted = assign.status === 'submitted';
-                        // Eğer notlanmamışsa VE teslim edilmemişse -> Bekleniyor durumudur
-                        const isPending = !isGraded && !isSubmitted;
+                        
+                        // DÜZELTME: isPending burada kullanılmadığı için kaldırıldı.
 
                         // Ekranda gösterilecek puan (Sadece notlanmışsa göster)
                         const displayPoints = isGraded ? assign.points.toString().replace(/\D/g, '') : '';
