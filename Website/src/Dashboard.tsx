@@ -313,7 +313,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     switch (activeView) {
       case 'dashboard': return <DashboardOverview />;
       case 'courses': return <MyCourses onCourseSelect={handleViewCourse} enrolledCodes={studentInfo?.enrolledCourses || []} />;
-      case 'course-detail': return <CourseDetails courseId={selectedCourseId} onBack={goBackToCourses} />;
+      case 'course-detail': return <CourseDetails onBack={goBackToCourses} />;
       case 'assignments': return <MyAssignments onAssignmentSelect={handleViewAssignment} />;
       case 'assignment-detail': return <AssignmentDetails data={selectedAssignment} onBack={goBackToAssignments} />;
       case 'grades': return <MyGrades />;
