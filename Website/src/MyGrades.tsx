@@ -5,23 +5,22 @@ import { fetchAssignmentsFromFirebase, getStudentData } from './DataManager';
 // --- TİP TANIMLAMALARI ---
 interface GradeAssignment {
   name: string;
-  grade: string | number | null; // Puan (Örn: 85 veya null)
-  max: number;    // Maksimum puan (Genelde 100)
-  weight: string; // Ağırlık (Şimdilik sabit)
+  grade: string | number | null; 
+  max: number;    
+  weight: string; 
   status: 'todo' | 'submitted' | 'graded';
 }
 
 interface CourseGradeCard {
   id: string;
-  name: string;       // Ders Kodu (Örn: MATH 401)
-  instructor: string; // Şimdilik sabit veya boş
-  finalLetter: string;// Şimdilik sabit
-  finalScore: number; // Şimdilik sabit
+  name: string;      
+  instructor: string; 
+  finalLetter: string;
+  finalScore: number; 
   assignments: GradeAssignment[];
 }
 
 export const MyGrades: React.FC = () => {
-  // İstatistikler (Senin isteğin üzerine sabit bıraktık)
   const stats = { gpa: '2.8', semesterAvg: 89.7, credits: 18 };
 
   const [courseGrades, setCourseGrades] = useState<CourseGradeCard[]>([]);
@@ -31,61 +30,47 @@ export const MyGrades: React.FC = () => {
     const loadGrades = async () => {
       try {
         const currentStudentId = localStorage.getItem('currentStudentId') || '220706010';
-        
-        // 1. Öğrenci verisini ve aldığı dersleri çek
+
         const studentData = await getStudentData(currentStudentId);
-        
-        // 2. Tüm ödevleri çek
+
         const allAssignments = await fetchAssignmentsFromFirebase();
 
         if (studentData && studentData.enrolledCourses) {
-          
-          // 3. Öğrencinin derslerine göre gruplandırma yapacağımız geçici yapı
-          // Örn: { "MATH 401": [Ödev1, Ödev2], "CS 101": [ÖdevA] }
           const coursesMap: Record<string, GradeAssignment[]> = {};
-
-          // Öğrencinin aldığı her ders için boş bir liste başlat
           studentData.enrolledCourses.forEach((code: string) => {
              coursesMap[code] = [];
           });
-
-          // 4. Ödevleri ilgili derslerin altına yerleştir
-          // @ts-ignore
           allAssignments.forEach((assign: any) => {
-             // Ders kodu eşleşiyor mu? (Boşluk/Harf duyarsız kontrol)
              const assignCode = assign.courseCode ? assign.courseCode.trim().toUpperCase() : "";
-             
-             // Öğrencinin derslerinden hangisine uyuyor?
+
              const matchedCourse = studentData.enrolledCourses.find((c: string) => c.trim().toUpperCase() === assignCode);
 
              if (matchedCourse) {
-               // Notu parse et (Örn: "85/100" -> 85 veya "85" -> 85)
                let gradeValue: string | number | null = null;
-               
+ 
                if (assign.status === 'graded' && assign.points) {
-                  // Sadece sayı kısmını almaya çalışalım
                   const score = parseInt(assign.points); 
                   if (!isNaN(score)) gradeValue = score;
-                  else gradeValue = assign.points; // Sayı değilse direkt yazıyı göster
+                  else gradeValue = assign.points;
                }
 
                coursesMap[matchedCourse].push({
                  name: assign.title,
                  grade: gradeValue,
-                 max: 100, // Varsayılan max puan
-                 weight: '-', // Firebase'de ağırlık tutmuyoruz, tire koyduk
+                 max: 100, 
+                 weight: '-', 
                  status: assign.status || 'todo'
                });
              }
           });
 
-          // 5. State'e dönüştür (CourseGradeCard formatına)
+          // 5. State'e dönüştür 
           const dynamicGrades: CourseGradeCard[] = Object.keys(coursesMap).map((courseCode, index) => ({
             id: `course-${index}`,
-            name: courseCode, // Dersin adı (MATH 401 vb.)
-            instructor: 'Akademisyen', // İsim veritabanında "teachers" tablosunda, buraya çekmek kompleks olur şimdilik sabit
-            finalLetter: '-', // Henüz hesaplanmıyor
-            finalScore: 0,    // Henüz hesaplanmıyor
+            name: courseCode, 
+            instructor: 'Akademisyen', 
+            finalLetter: '-', 
+            finalScore: 0,   
             assignments: coursesMap[courseCode]
           }));
 
@@ -112,7 +97,7 @@ export const MyGrades: React.FC = () => {
         <p>Track your academic performance</p>
       </div>
 
-      {/* İSTATİSTİKLER (SABİT) */}
+      {/* İSTATİSTİKLER */}
       <div className="grades-stats-grid">
         <div className="grade-stat-card"><span className="stat-label">Overall GPA</span><div className="stat-main-value">{stats.gpa}</div><span className="stat-sub">out of 4.0</span></div>
         <div className="grade-stat-card">
@@ -123,7 +108,7 @@ export const MyGrades: React.FC = () => {
         <div className="grade-stat-card"><span className="stat-label">Completed Credits</span><div className="stat-main-value">{stats.credits}</div><span className="stat-sub">This semester</span></div>
       </div>
 
-      {/* DERS VE NOT LİSTESİ (DİNAMİK) */}
+      {/* DERS VE NOT LİSTESİ */}
       <div className="grades-list">
         {courseGrades.length > 0 ? (
           courseGrades.map((course) => (
@@ -133,7 +118,6 @@ export const MyGrades: React.FC = () => {
                     <h3>{course.name}</h3>
                     <span className="instructor-name">{course.instructor}</span>
                 </div>
-                {/* Final notu şu an hesaplanmadığı için gizleyebiliriz veya tire koyabiliriz */}
                 <div className="final-grade-box" style={{opacity: 0.5}}>
                     <span className="letter-grade">-</span>
                     <span className="percentage-grade">Current</span>

@@ -11,9 +11,11 @@ import {
   gradeAssignment,
   toggleAttendanceSession,
   listenToRealTimeAttendance,
-  listenToRealTimeAssignments
+  listenToRealTimeAssignments,
+  createNewAssignment,
+  getStudentAttendanceHistory,
+  markStudentPresent
 } from './DataManager';
-import { injectSampleData } from './DataManager';
 
 // Firebase importları
 import { db } from './firebase';
@@ -22,60 +24,34 @@ import { doc, getDoc } from "firebase/firestore";
 interface TeacherDashboardProps {
   onLogout: () => void;
   currentUserEmail: string;
-  // Hangi öğretmenin giriş yaptığını bilmemiz lazım
 }
 
 interface Student {
   id: number | string;
-  // "number" yerine "number | string" yaptık
   name: string;
   status: 'present' | 'absent' | 'late';
 }
 
-// MOCK DATABASE (Ders içerikleri burada duruyor, ama erişim yetkiye göre olacak)
-const COURSES_DB: Record<string, { code: string; time: string; students: Student[] }> = {
-  'Software Validation': {
-    code: 'MATH 401',
-    time: 'Tue/Thu 14:00',
-    students: [
-      { id: 2024006, name: 'Öykü Şahin', status: 'absent' },
-      { id: 2024007, name: 'Kaan Gündüz', status: 'present' },
-      { id: 2024008, name: 'Doğukan Gökdemir', status: 'present' },
-      { id: 2024009, name: 'Ceren Tuncer', status: 'late' },
-    ]
-  },
-  'Database Management': {
-    code: 'CS 101',
-    time: 'Mon/Wed 10:00',
-    students: [
-      { id: 2024010, name: 'Hasan Yanık', status: 'present' },
-      { id: 2024011, name: 'Ali Yılmaz', status: 'present' },
-      { id: 2024012, name: 'Ayşe Demir', status: 'present' },
-      { id: 2024013, name: 'Mehmet Öz', status: 'absent' },
-      { id: 2024014, name: 'Zeynep Kaya', status: 'present' },
-    ]
-  },
-  'Operating Systems': {
-    code: 'CS 302',
-    time: 'Fri 09:00',
-    students: [
-      { id: 2024020, name: 'Ahmet Yılmaz', status: 'present' },
-      { id: 2024021, name: 'Burak Can', status: 'late' },
-    ]
-  },
-  // Müdür panelindeki isimlerle buradakilerin EŞLEŞMESİ lazım.
-  'Calculus I': { code: 'MAT 101', time: 'Mon 09:00', students: [] },
-  'Physics': { code: 'PHY 101', time: 'Wed 13:00', students: [] },
-  'Artificial Intelligence': { code: 'AI 404', time: 'Fri 14:00', students: [] },
-  'Web Development': { code: 'CS 202', time: 'Tue 10:00', students: [] },
+const COURSES_DB: Record<string, { code: string; time: string }> = {
+  'Software Validation': { code: 'MATH 401', time: 'Tue/Thu 14:00' },
+  'Database Management': { code: 'CS 101', time: 'Mon/Wed 10:00' },
+  'Operating Systems': { code: 'CS 302', time: 'Fri 09:00' },
+  'Calculus I': { code: 'MAT 101', time: 'Mon 09:00' },
+  'Physics': { code: 'PHY 101', time: 'Wed 13:00' },
+  'Artificial Intelligence': { code: 'AI 404', time: 'Fri 14:00' },
+  'Web Development': { code: 'CS 202', time: 'Tue 10:00' },
 };
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, currentUserEmail }) => {
   
   // --- STATE YÖNETİMİ ---
-  const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'courses'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'calendar' | 'courses'| 'assignments'| 'profile'| 'settings'>('dashboard');
   const [loading, setLoading] = useState(true);
-  
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<any>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   // Müdürün atadığı derslerin listesi
   const [assignedCourseNames, setAssignedCourseNames] = useState<string[]>([]);
   // Modal Görünürlükleri
@@ -97,6 +73,31 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
   const [students, setStudents] = useState<Student[]>([]);
 
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newAssignment, setNewAssignment] = useState({
+   title: '',
+   dueDate: '',
+   description: ''
+  }
+);
+// selectedCourseCodeForDB'den SONRA gelmeli
+const selectedCourseCodeForDB = () => {
+  return COURSES_DB[selectedCourseKey]?.code || '';
+};
+
+const handleStudentClick = async (student: any) => {
+  console.log("Öğrenciye tıklandı:", student.name);
+  setSelectedStudentForHistory(student);
+  setShowHistoryModal(true);
+  setIsHistoryLoading(true);
+
+  // Artık selectedCourseCodeForDB yukarıda tanımlı olduğu için hata vermez
+  const courseCode = selectedCourseCodeForDB();
+
+  const history = await getStudentAttendanceHistory(student.id.toString(), courseCode);
+  setAttendanceHistory(history);
+  setIsHistoryLoading(false);
+};
   // --- FIREBASE VERİ ÇEKME ---
   useEffect(() => {
     const fetchAssignedCourses = async () => {
@@ -156,17 +157,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onLogout, cu
           }));
           // @ts-ignore
           setStudents(formattedStudents);
-        } else {
-          // Yedek (Mock) Veri
-          if (COURSES_DB[selectedCourseKey]) {
-             const mockStudents = COURSES_DB[selectedCourseKey].students.map(s => ({...s, status: 'absent'}));
-             // @ts-ignore
-             setStudents(mockStudents);
-          } else {
-             setStudents([]);
-          }
+        } 
         }
-      } catch (err) {
+       catch (err) {
         console.error("Öğrenci yükleme hatası:", err);
       }
     };
@@ -241,16 +234,187 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
     alert("Duyuru yayınlandı!");
   };
 
-  const handleToggleSession = async () => {
+const handleToggleSession = async () => {
     const newState = !isSessionActive;
-    // DataManager'daki fonksiyonu çağır
+    
+    if (!newState) { 
+        const confirmSave = window.confirm("Yoklamayı bitirip verileri kaydetmek istiyor musunuz?");
+        
+        if (confirmSave) {
+            const courseCode = selectedCourseCodeForDB();
+            
+            // VAR veya GEÇ olan herkesi filtrele
+            const attendingStudents = students.filter(s => s.status === 'present' || s.status === 'late');
+            
+            for (const student of attendingStudents) {
+                // Burada student.status bilgisini de gönderebilirsin (DataManager'da destekliyorsa)
+                await markStudentPresent(student.id.toString(), courseCode);
+            }
+            alert(`✅ ${attendingStudents.length} öğrencinin katılım verisi işlendi.`);
+        }
+    }
+
     await toggleAttendanceSession(selectedCourseCodeForDB(), newState);
     setIsSessionActive(newState);
-    if(newState) {
-        alert("📡 Yoklama sistemi açıldı! Öğrenciler artık bildirim alıyor.");
-    } else {
-        alert("🔒 Yoklama sistemi kapatıldı.");
-    }
+};
+const TeacherProfilePage = () => {
+    return (
+        <div className="profile-container animate-page-enter" style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+            {/* Üst Kimlik Kartı */}
+            <div className="profile-header-card" style={{ 
+                background: '#4b2e83', borderRadius: '16px', padding: '40px 20px', 
+                textAlign: 'center', color: 'white', boxShadow: '0 10px 30px rgba(75, 46, 131, 0.2)',
+                marginBottom: '30px', position: 'relative', overflow: 'hidden'
+            }}>
+                <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '150px', height: '150px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }}></div>
+                
+                <div className="profile-avatar-large" style={{ 
+                    width: '100px', height: '100px', background: 'white', color: '#4b2e83', 
+                    fontSize: '2.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', 
+                    justifyContent: 'center', borderRadius: '50%', margin: '0 auto 15px', border: '4px solid rgba(255,255,255,0.3)'
+                }}>
+                    {currentUserEmail.charAt(0).toUpperCase()}
+                </div>
+                
+                <h2 style={{ margin: '0 0 5px', fontSize: '1.8rem', fontWeight: '600' }}>{currentUserEmail.split('@')[0]}</h2>
+                <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.2)', padding: '5px 15px', borderRadius: '20px', fontSize: '0.85rem' }}>
+                    👨‍🏫 Akademisyen / Öğretim Görevlisi
+                </div>
+            </div>
+
+            {/* Bilgi Kutuları */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="modern-card" style={{ padding: '20px', textAlign: 'left' }}>
+                    <label style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '5px' }}>E-Posta Adresi</label>
+                    <div style={{ fontWeight: '600', color: '#333', fontSize: '1rem' }}>{currentUserEmail}</div>
+                </div>
+
+                <div className="modern-card" style={{ padding: '20px', textAlign: 'left' }}>
+                    <label style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '5px' }}>Ünvan</label>
+                    <div style={{ fontWeight: '600', color: '#333', fontSize: '1.1rem' }}>Doktor Öğretim Üyesi</div>
+                </div>
+
+                <div className="modern-card" style={{ padding: '20px', textAlign: 'left', gridColumn: 'span 2' }}>
+                    <label style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '5px' }}>Atanmış Dersler ({assignedCourseNames.length})</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                        {assignedCourseNames.map(course => (
+                            <span key={course} style={{ background: '#f0edff', color: '#4b2e83', padding: '5px 12px', borderRadius: '15px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                {course}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="modern-card" style={{ padding: '20px', textAlign: 'left' }}>
+                    <label style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '5px' }}>Fakülte</label>
+                    <div style={{ fontWeight: '600', color: '#333', fontSize: '1.1rem' }}>Mühendislik Fakültesi</div>
+                </div>
+
+                <div className="modern-card" style={{ padding: '20px', textAlign: 'left' }}>
+                    <label style={{ color: '#888', fontSize: '0.8rem', display: 'block', marginBottom: '5px' }}>Ofis No</label>
+                    <div style={{ fontWeight: '600', color: '#333', fontSize: '1.1rem' }}>B-204 / Teknik Bina</div>
+                </div>
+            </div>
+
+            <button className="primary-black-btn" style={{ marginTop: '30px', width: '100%', padding: '15px' }} onClick={() => setActiveView('dashboard')}>
+                Panele Geri Dön
+            </button>
+        </div>
+    );
+};
+const SettingsPage = () => {
+    // Ayarlar için yerel state (tıklanabilir olması için)
+    const [settings, setSettings] = useState({
+        emailNotif: true,
+        announceNotif: true,
+        darkMode: false
+    });
+
+    const toggleSetting = (key: keyof typeof settings) => {
+        setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    return (
+        <div className="settings-container animate-page-enter">
+            <h2 style={{ marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>⚙️</span> Sistem Ayarları
+            </h2>
+
+            <div className="setting-group modern-card" style={{ padding: '20px', marginBottom: '20px' }}>
+                <h3 style={{ fontSize: '1rem', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px', marginBottom: '15px' }}>Bildirim Tercihleri</h3>
+                
+                {/* E-POSTA SWITCH */}
+                <div className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <div className="setting-info">
+                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>E-Posta Bildirimleri</h4>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#888' }}>Yeni ödev eklendiğinde mail al.</p>
+                    </div>
+                    <div 
+                        onClick={() => toggleSetting('emailNotif')}
+                        style={{
+                            width: '45px', height: '24px', borderRadius: '12px',
+                            backgroundColor: settings.emailNotif ? '#4b2e83' : '#ccc',
+                            position: 'relative', cursor: 'pointer', transition: '0.3s'
+                        }}
+                    >
+                        <div style={{
+                            width: '18px', height: '18px', backgroundColor: 'white', borderRadius: '50%',
+                            position: 'absolute', top: '3px', left: settings.emailNotif ? '24px' : '3px', transition: '0.3s'
+                        }}></div>
+                    </div>
+                </div>
+
+                {/* DUYURU SWITCH */}
+                <div className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="setting-info">
+                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Duyuru Bildirimleri</h4>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#888' }}>Hoca duyuru yapınca anlık bildirim al.</p>
+                    </div>
+                    <div 
+                        onClick={() => toggleSetting('announceNotif')}
+                        style={{
+                            width: '45px', height: '24px', borderRadius: '12px',
+                            backgroundColor: settings.announceNotif ? '#4b2e83' : '#ccc',
+                            position: 'relative', cursor: 'pointer', transition: '0.3s'
+                        }}
+                    >
+                        <div style={{
+                            width: '18px', height: '18px', backgroundColor: 'white', borderRadius: '50%',
+                            position: 'absolute', top: '3px', left: settings.announceNotif ? '24px' : '3px', transition: '0.3s'
+                        }}></div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="setting-group modern-card" style={{ padding: '20px' }}>
+                <h3 style={{ fontSize: '1rem', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px', marginBottom: '15px' }}>Görünüm</h3>
+                <div className="setting-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="setting-info">
+                        <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Karanlık Mod (Dark Mode)</h4>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#888' }}>Göz yormayan karanlık tema.</p>
+                    </div>
+                    <div 
+                        onClick={() => toggleSetting('darkMode')}
+                        style={{
+                            width: '45px', height: '24px', borderRadius: '12px',
+                            backgroundColor: settings.darkMode ? '#222' : '#ccc',
+                            position: 'relative', cursor: 'pointer', transition: '0.3s'
+                        }}
+                    >
+                        <div style={{
+                            width: '18px', height: '18px', backgroundColor: 'white', borderRadius: '50%',
+                            position: 'absolute', top: '3px', left: settings.darkMode ? '24px' : '3px', transition: '0.3s'
+                        }}></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button className="secondary-btn" onClick={() => setActiveView('dashboard')}>İptal</button>
+                <button className="primary-black-btn" onClick={() => { alert('Ayarlar Başarıyla Güncellendi!'); setActiveView('dashboard'); }}>Değişiklikleri Kaydet</button>
+            </div>
+        </div>
+    );
 };
   const handleAddStudent = async () => {
     if (!newStudentId) {
@@ -297,9 +461,7 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
     setSelectedCourseKey(courseName);
     setActiveView('dashboard');
   };
-  const selectedCourseCodeForDB = () => {
-    return COURSES_DB[selectedCourseKey]?.code || '';
-  };
+
   // --- DASHBOARD İÇERİĞİ ---
   const renderDashboardContent = () => (
     <div className="fade-in">
@@ -338,21 +500,6 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
           <div className="header-actions">
             <button className="secondary-btn" onClick={() => setShowAddStudentModal(true)} style={{marginRight:'10px'}}>+ Öğrenci Ekle</button>
             <button className="secondary-btn" onClick={markAllPresent}>Tümünü 'Var' Say</button>
-            {/* --- YENİ EKLENECEK VERİ BUTONU (BURAYA KOYUYORUZ) --- */}
-            <button 
-                className="secondary-btn" 
-                onClick={injectSampleData}
-                style={{
-                    marginRight:'5px', 
-                    border: '1px dashed #d32f2f', 
-                    color: '#d32f2f', 
-                    fontWeight: 'bold'
-                }}
-            >
-                🛠️ Veri Yükle
-            </button>
-            {/* ---------------------------------------------------- */}
-            
             <button className="primary-black-btn">▶ Dersi Başlat</button>
             <button 
     className={isSessionActive ? "primary-black-btn" : "secondary-btn"} 
@@ -374,23 +521,108 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
           {students.length === 0 ? (
              <p style={{padding:'20px', color:'#999', textAlign:'center'}}>Bu derse kayıtlı öğrenci yok veya ders seçilmedi.</p>
           ) : (
-            students.map((student) => (
-              <div key={student.id} className="student-row">
-                <div className="student-info">
-                  
-                  <div className={`student-avatar ${['Ö', 'C', 'A'].includes(student.name.charAt(0)) ? 'pink' : 'green'}`}>
-                    {student.name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div><strong>{student.name}</strong><span style={{display:'block', fontSize:'0.8rem', color:'#888'}}>{student.id}</span></div>
-                </div>
-                
-                <div className="attendance-actions-group">
-                  <button className={`status-btn present ${student.status === 'present' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'present')}>Var</button>
-                  <button className={`status-btn absent ${student.status === 'absent' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'absent')}>Yok</button>
-                  <button className={`status-btn late ${student.status === 'late' ? 'active' : ''}`} onClick={() => handleStatusChange(student.id, 'late')}>Geç</button>
-                </div>
-              </div>
-            ))
+            students.map((student: any) => (
+  <div 
+    key={student.id} 
+    className="student-row" 
+    style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      padding: '12px 20px', 
+      borderBottom: '1px solid #eee',
+      transition: '0.2s'
+    }}
+  >
+    {/* Sol Taraf: Öğrenci İsmi ve id*/}
+<span 
+  onClick={() => handleStudentClick(student)} 
+  style={{ 
+    cursor: 'pointer', 
+    flex: 1, 
+    display: 'flex', 
+    flexDirection: 'column', // İsim ve ID'yi alt alta dizer
+    gap: '2px' 
+  }}
+>
+  <span style={{ fontWeight: '500', color: '#333' }}>
+    {student.name}
+  </span>
+  <span style={{ 
+    fontSize: '0.75rem', 
+    color: '#888', 
+    fontWeight: '400',
+  
+  }}>
+    {student.id}
+  </span>
+</span>
+
+    {/* Sağ Taraf: Yan Yana Renkli Butonlar */}
+<div style={{ display: 'flex', gap: '5px' }}>
+  {/* VAR Butonu */}
+  <button
+    disabled={!isSessionActive} // Yoklama aktif değilse tıklanamaz
+    onClick={() => handleStatusChange(student.id, 'present')}
+    style={{
+      padding: '6px 12px',
+      borderRadius: '6px',
+      border: 'none',
+      cursor: isSessionActive ? 'pointer' : 'not-allowed', // İmleç değişimi
+      fontSize: '0.75rem',
+      fontWeight: 'bold',
+      // Yoklama kapalıyken gri, açıkken kendi rengi
+      backgroundColor: !isSessionActive ? '#e0e0e0' : (student.status === 'present' ? '#2ecc71' : '#f0f0f0'),
+      color: !isSessionActive ? '#a0a0a0' : (student.status === 'present' ? 'white' : '#888'),
+      transition: '0.3s',
+      opacity: !isSessionActive ? 0.7 : 1
+    }}
+  >
+    VAR
+  </button>
+
+  {/* GEÇ Butonu */}
+  <button
+    disabled={!isSessionActive}
+    onClick={() => handleStatusChange(student.id, 'late')}
+    style={{
+      padding: '6px 12px',
+      borderRadius: '6px',
+      border: 'none',
+      cursor: isSessionActive ? 'pointer' : 'not-allowed',
+      fontSize: '0.75rem',
+      fontWeight: 'bold',
+      backgroundColor: !isSessionActive ? '#e0e0e0' : (student.status === 'late' ? '#f1c40f' : '#f0f0f0'),
+      color: !isSessionActive ? '#a0a0a0' : (student.status === 'late' ? 'white' : '#888'),
+      transition: '0.3s',
+      opacity: !isSessionActive ? 0.7 : 1
+    }}
+  >
+    GEÇ
+  </button>
+
+  {/* YOK Butonu */}
+  <button
+    disabled={!isSessionActive}
+    onClick={() => handleStatusChange(student.id, 'absent')}
+    style={{
+      padding: '6px 12px',
+      borderRadius: '6px',
+      border: 'none',
+      cursor: isSessionActive ? 'pointer' : 'not-allowed',
+      fontSize: '0.75rem',
+      fontWeight: 'bold',
+      backgroundColor: !isSessionActive ? '#e0e0e0' : (student.status === 'absent' ? '#e74c3c' : '#f0f0f0'),
+      color: !isSessionActive ? '#a0a0a0' : (student.status === 'absent' ? 'white' : '#888'),
+      transition: '0.3s',
+      opacity: !isSessionActive ? 0.7 : 1
+    }}
+  >
+    YOK
+  </button>
+    </div>
+  </div>
+))
           )}
         </div>
       </div>
@@ -414,23 +646,143 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
     </div>
   );
 
-  const renderContent = () => {
+const renderContent = () => {
     switch (activeView) {
       case 'dashboard': return renderDashboardContent();
       case 'calendar': return <TeacherCalendar />;
-      case 'courses': return <TeacherCourses onSelectCourse={handleCourseSelection} />;
+      case 'profile': return <TeacherProfilePage />;
+      case 'settings': return <SettingsPage />;
+      case 'courses': return <TeacherCourses onSelectCourse={handleCourseSelection} 
+    assignedCourseNames={assignedCourseNames} // Bu satırı ekle!
+  />;
+      case 'assignments': return renderAssignmentsContent(); // <-- Burayı ekledik
       default: return renderDashboardContent();
     }
   };
 
-  // --- ANA RENDER ---
-  
-  // Yükleniyor durumu
+
+  const renderAssignmentsContent = () => {
+    return (
+      <div className="section-card animate-page-enter">
+        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{margin:0}}>Ödev Yönetimi</h2>
+            <p style={{margin:0, color:'#666', fontSize:'0.9rem'}}>{selectedCourseCodeForDB()} dersi ödevleri</p>
+          </div>
+          <button 
+            className="primary-black-btn" 
+            onClick={() => setShowCreateModal(true)}
+            style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+          >
+            ➕ Yeni Ödev Yayınla
+          </button>
+        </div>
+
+        {/* ÖDEV LİSTESİ */}
+        <div className="assignment-list-container">
+          {courseAssignments.length === 0 ? (
+            <div style={{textAlign:'center', padding:'40px', color:'#999'}}>Henüz ödev oluşturulmamış.</div>
+          ) : (
+            courseAssignments.map((assign: any) => (
+              <div key={assign.id} className="assignment-item-row" style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '15px', borderBottom: '1px solid #eee'
+              }}>
+                <div>
+                  <h4 style={{margin:0}}>{assign.title}</h4>
+                  <small>{assign.dueDate} • {assign.status === 'graded' ? '✅ Notlandı' : '⏳ Bekliyor'}</small>
+                </div>
+                <button className="view-btn" onClick={() => { /* Notlandırma Modalını açan fonksiyon */ setShowGradingModal(true); }}>
+                   {assign.status === 'graded' ? 'Notu Gör' : 'Notlandır'}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* C ŞIKKI: YENİ ÖDEV OLUŞTURMA MODALI (TAM VERSİYON) */}
+{showCreateModal && (
+  <div className="modal-overlay">
+    <div className="modal-content" style={{ maxWidth: '550px' }}>
+      <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '10px' }}>📝 Yeni Ödev Yayınla</h3>
+      
+      <div style={{ marginTop: '20px' }}>
+        {/* BAŞLIK */}
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Ödev Başlığı</label>
+        <input 
+          type="text" 
+          placeholder="Örn: Proje Taslak Raporu"
+          className="form-input"
+          onChange={(e) => setNewAssignment({...newAssignment, title: e.target.value})}
+          style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '15px' }}
+        />
+
+        {/* TARİH */}
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Son Teslim Tarihi</label>
+        <input 
+          type="date" 
+          className="form-input"
+          onChange={(e) => setNewAssignment({...newAssignment, dueDate: e.target.value})}
+          style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '15px' }}
+        />
+
+        {/* AÇIKLAMA (EKSİK OLAN KISIM BURASIYDI) */}
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Ödev Talimatları / Açıklama</label>
+        <textarea 
+          placeholder="Öğrencilerin ne yapması gerektiğini detaylıca yazın..."
+          rows={5}
+          className="form-input"
+          onChange={(e) => setNewAssignment({...newAssignment, description: e.target.value})}
+          style={{ 
+            width: '100%', 
+            padding: '10px', 
+            borderRadius: '6px', 
+            border: '1px solid #ddd', 
+            marginBottom: '15px',
+            fontFamily: 'inherit',
+            resize: 'vertical' 
+          }}
+        ></textarea>
+      </div>
+
+      <div className="modal-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+        <button className="secondary-btn" onClick={() => setShowCreateModal(false)}>İptal</button>
+        <button 
+          className="primary-black-btn" 
+          onClick={async () => {
+            if(!newAssignment.title || !newAssignment.dueDate) {
+                return alert("Lütfen en azından bir başlık ve tarih belirleyin!");
+            }
+
+            const payload = {
+                ...newAssignment,
+                courseCode: selectedCourseCodeForDB(),
+                type: 'Assignment',
+                status: 'todo' // Başlangıç durumu
+            };
+
+            const res = await createNewAssignment(payload);
+            if(res.success) {
+                setShowCreateModal(false);
+                setNewAssignment({ title: '', dueDate: '', description: '' }); // Formu temizle
+                alert("🚀 Ödev ve yönergeler başarıyla yayınlandı!");
+            } else {
+                alert("Bir hata oluştu, lütfen tekrar deneyin.");
+            }
+          }}
+        >
+          Ödevi Yayınla
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+      </div>
+    );
+  };
   if (loading) {
     return <div className="dashboard-layout" style={{display:'flex', justifyContent:'center', alignItems:'center'}}><h3>Dersleriniz Yükleniyor...</h3></div>;
   }
-
-  // Ders atanmamışsa gösterilecek ekran
   if (assignedCourseNames.length === 0) {
     return (
       <div className="dashboard-layout">
@@ -464,6 +816,9 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
           <div className={`menu-item ${activeView === 'courses' ? 'active' : ''}`} onClick={() => setActiveView('courses')}>
             <span className="icon">📘</span> Derslerim
           </div>
+          <div className={`menu-item ${activeView === 'assignments' ? 'active' : ''}`} onClick={() => setActiveView('assignments')}>
+            <span className="icon">📝</span> Ödev Yönetimi
+          </div>
           <div className={`menu-item ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}>
             <span className="icon">📅</span> Takvim
           </div>
@@ -478,14 +833,61 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
         <header className="top-header">
           <div className="page-title-group"><h2>Akademisyen Portalı</h2><p>Derslerinizi ve yoklamaları buradan yönetin</p></div>
           <div className="user-profile">
-            <div className="notification-icon">🔔</div>
-            <div className="user-info">
-               <div className="details">
-                    <span className="u-name">{currentUserEmail}</span>
-                    <span className="u-role">Öğretmen</span>
+            {/* Profil Resmi ve Menü */}
+<div className="user-info" style={{position: 'relative', cursor: 'pointer'}} onClick={() => setShowUserMenu(!showUserMenu)}>
+    <div className="details">
+        <span className="u-name">{currentUserEmail.split('@')[0]}</span>
+        <span className="u-role">Öğretmen</span>
+    </div>
+    <div className="avatar" style={{ border: showUserMenu ? '2px solid #4b2e83' : '2px solid transparent', transition: '0.3s' }}>
+        {currentUserEmail.charAt(0).toUpperCase()}
+    </div>
+
+    {showUserMenu && (
+        <div className="dropdown-panel profile-dropdown modern-menu" onClick={(e) => e.stopPropagation()} style={{
+            position: 'absolute', top: '60px', right: '0', width: '260px', 
+            backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            padding: '15px', border: '1px solid #eee', zIndex: 1000
+        }}>
+            {/* Üst Kısım: Küçük Kullanıcı Kartı */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '15px', borderBottom: '1px solid #f5f5f5', marginBottom: '10px' }}>
+                <div className="avatar" style={{ width: '45px', height: '45px', fontSize: '1.2rem', backgroundColor: '#4b2e83', color: 'white' }}>
+                    {currentUserEmail.charAt(0).toUpperCase()}
                 </div>
-                <div className="avatar">{currentUserEmail.charAt(0).toUpperCase()}</div>
+                <div style={{ textAlign: 'left' }}>
+                    <h5 style={{ margin: 0, fontSize: '0.95rem', color: '#333' }}>{currentUserEmail.split('@')[0]}</h5>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#888' }}>Akademisyen</p>
+                </div>
             </div>
+
+            {/* Menü Linkleri */}
+            <div className="profile-menu-item" onClick={() => { setActiveView('profile' as any); setShowUserMenu(false); }} 
+                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', transition: '0.2s', cursor: 'pointer' }}>
+                <span style={{ fontSize: '1.1rem' }}>👤</span> 
+                <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Profilim</div>
+                    <div style={{ fontSize: '0.7rem', color: '#999' }}>Akademik bilgilerini gör</div>
+                </div>
+            </div>
+            <div className="profile-menu-item" onClick={() => { setActiveView('settings'); setShowUserMenu(false); }}
+                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', transition: '0.2s' }}>
+                <span style={{ fontSize: '1.1rem' }}>⚙️</span> 
+                <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Ayarlar</div>
+                    <div style={{ fontSize: '0.7rem', color: '#999' }}>Uygulama tercihleri</div>
+                </div>
+            </div>
+
+            <div style={{ height: '1px', background: '#f5f5f5', margin: '10px 0' }}></div>
+
+            <div className="profile-menu-item logout" onClick={(e) => { e.stopPropagation(); onLogout(); }}
+                 style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '8px', color: '#d32f2f', cursor: 'pointer' }}>
+                <span style={{ fontSize: '1.1rem' }}>🚪</span> 
+                <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Güvenli Çıkış</span>
+            </div>
+        </div>
+    )}
+</div>
           </div>
         </header>
 
@@ -576,13 +978,8 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
                     </div>
                 ) : (
                     courseAssignments.map((assign: any) => {
-                        // --- DURUM KONTROLLERİ ---
                         const isGraded = assign.status === 'graded';
                         const isSubmitted = assign.status === 'submitted';
-                        
-                        // DÜZELTME: isPending burada kullanılmadığı için kaldırıldı.
-
-                        // Ekranda gösterilecek puan (Sadece notlanmışsa göster)
                         const displayPoints = isGraded ? assign.points.toString().replace(/\D/g, '') : '';
 
                         return (
@@ -712,7 +1109,50 @@ const handleStatusChange = (id: number | string, newStatus: 'present' | 'absent'
             </div>
           </div>
         )}
+{showHistoryModal && selectedStudentForHistory && (
+  <div className="modal-overlay">
+    <div className="modal-content" style={{ maxWidth: '500px' }}>
+      <div style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
+        <h3 style={{ margin: 0 }}>📊 Katılım Geçmişi: {selectedStudentForHistory.name}</h3>
+      </div>
 
+      {isHistoryLoading ? (
+        <p style={{ textAlign: 'center', padding: '20px' }}>Veriler yükleniyor...</p>
+      ) : (
+        <div style={{ marginTop: '10px' }}>
+          <h4 style={{ marginBottom: '15px', color: '#666' }}>{selectedCourseCodeForDB()} Kayıtları</h4>
+          
+          {attendanceHistory.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', background: '#f9f9f9', borderRadius: '8px' }}>
+              <p>Bu öğrenci için henüz geçmiş kayıt bulunamadı.</p>
+            </div>
+          ) : (
+            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {attendanceHistory.map((record, i) => (
+                <div key={i} style={{ 
+                  display: 'flex', justifyContent: 'space-between', padding: '12px', 
+                  borderBottom: '1px solid #eee', alignItems: 'center' 
+                }}>
+                  <span style={{ fontSize: '0.9rem' }}>📅 {record.date}</span>
+                  <span style={{ 
+                    fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px',
+                    backgroundColor: '#e8f5e9', color: '#2e7d32', fontWeight: 'bold'
+                  }}>
+                    KATILDI
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginTop: '20px', textAlign: 'right' }}>
+        <button className="primary-black-btn" onClick={() => setShowHistoryModal(false)}>Kapat</button>
+      </div>
+    </div>
+  </div>
+)}
       </main>
     </div>
   );

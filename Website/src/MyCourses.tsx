@@ -25,8 +25,8 @@ export const MyCourses: React.FC<MyCoursesProps> = ({ onCourseSelect, enrolledCo
     <div className="courses-container fade-in">
       {/* SAYFA BAŞLIĞI */}
       <div className="page-header">
-        <h2>Derslerim</h2>
-        <p>2025 Güz döneminde kayıtlı olduğun dersler</p>
+        <h2>My Courses</h2>
+        <p>Courses you are enrolled in</p>
       </div>
 
       {/* DERS KARTLARI GRİDİ */}

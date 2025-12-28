@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
-import './Dashboard.css'; // Mevcut CSS'leri kullanabilir
+import './Dashboard.css';
 
 interface Teacher {
-  email: string; // ID olarak kullanıyoruz
+  email: string; 
   name: string;
   surname: string;
   assignedCourses: string[];
 }
 
-// Atanabilecek Tüm Derslerin Havuzu
 const ALL_COURSES = [
   'Software Validation',
   'Database Management',

@@ -2,7 +2,7 @@ import { db } from './firebase';
 import { 
   collection, getDocs, addDoc, updateDoc, doc, 
   query, where, arrayUnion, setDoc, // DÜZELTME: 'orderBy' buradan silindi.
-  getDoc, onSnapshot
+  getDoc, onSnapshot, orderBy
 } from 'firebase/firestore';
 
 // --- TİP TANIMLARI (Interfaces) ---
@@ -74,7 +74,29 @@ export const registerStudentToCourse = async (studentSchoolId: string, courseCod
     console.error("Hata:", error);
   }
 };
+export const getStudentAttendanceHistory = async (studentId: string, courseCode: string) => {
+  try {
+    const attendanceRef = collection(db, "attendance");
+    // Öğrenci ID'sine ve ders koduna göre filtrele, tarihe göre sırala
+    const q = query(
+      attendanceRef,
+      where("studentId", "==", studentId),
+      where("courseCode", "==", courseCode),
+      orderBy("date", "desc")
+    );
 
+    const querySnapshot = await getDocs(q);
+    const history = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return history;
+  } catch (error) {
+    console.error("Yoklama geçmişi çekme hatası:", error);
+    return [];
+  }
+};
 export const completeStudentRegistration = async (studentId: string, name: string, surname: string, password: string) => {
   const studentsRef = collection(db, "students");
   const q = query(studentsRef, where("studentId", "==", studentId));
@@ -128,23 +150,19 @@ export const getAnnouncementsByCourses = async (courseCodes: string[]) => {
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement));
 };
-
-// --- YENİ: VERİTABANINI DOLDURMA (SEED) ---
-// Bunu sadece bir kere çalıştırıp veritabanını doldurmak için kullanabilirsin
-export const seedDatabase = async () => {
-  const testStudentId = "220706010";
-  
-  // Önce öğrenci var mı bakalım
-  const check = await getStudentData(testStudentId);
-  if (!check) {
-    await addDoc(collection(db, "students"), {
-      studentId: testStudentId,
-      name: "Öykü Şahin",
-      enrolledCourses: ["MATH 401"]
+export const createNewAssignment = async (assignmentData: any) => {
+  try {
+    const docRef = await addDoc(collection(db, "assignments"), {
+      ...assignmentData,
+      status: 'todo', // Yeni ödev her zaman 'todo' başlar
+      points: "0",
+      createdAt: new Date().toISOString()
     });
-    console.log("Demo öğrenci oluşturuldu.");
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    console.error("Ödev oluşturma hatası:", error);
+    return { success: false, error };
   }
-  alert("Veritabanı hazır!");
 };
 export const addAssignmentToFirebase = async (data: { courseCode: string, title: string, dueDate: string }) => {
   try {
@@ -297,81 +315,6 @@ export const listenToRealTimeAttendance = (courseCode: string, callback: (presen
 
   return unsubscribe; // Dinlemeyi durdurmak için bunu döndürüyoruz
 };
-
-
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-// FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ****** FAKE DATAS ******
-
-export const injectSampleData = async () => {
-  const confirm = window.confirm("⚠️ DİKKAT: Veritabanına toplu sahte veri eklenecek. Onaylıyor musunuz?");
-  if (!confirm) return;
-
-  console.log("Veri enjeksiyonu başlıyor...");
-
-  // 1. SAHTE DUYURULAR (ANNOUNCEMENTS)
-  const fakeAnnouncements = [
-    { courseCode: 'MATH 401', title: 'Vize Sonuçları Açıklandı', content: 'Arkadaşlar vize kağıtlarınızı ofisimden alabilirsiniz. Çan eğrisi 45 puandır.', date: '2025-11-15', priority: 'high' },
-    { courseCode: 'CS 101', title: 'Laboratuvar İptali', content: 'Bu haftaki Cuma laboratuvarı elektrik kesintisi nedeniyle yapılmayacaktır.', date: '2025-12-01', priority: 'normal' },
-    { courseCode: 'GENEL', title: 'Kış Festivali', content: 'Kampüs bahçesinde düzenlenecek kış festivaline tüm öğrenciler davetlidir.', date: '2025-12-20', priority: 'low' },
-    { courseCode: 'PHY 101', title: 'Ek Ders Duyurusu', content: 'Final öncesi soru çözüm saati Çarşamba 14:00\'te yapılacaktır.', date: '2025-12-18', priority: 'high' },
-    { courseCode: 'CS 302', title: 'Proje Teslim Tarihi Uzatıldı', content: 'Yoğun istek üzerine işletim sistemleri projesi 2 gün ertelenmiştir.', date: '2025-12-10', priority: 'normal' },
-  ];
-
-  // 2. SAHTE ÖDEVLER (ASSIGNMENTS)
-  const fakeAssignments = [
-    // MATH 401
-    { courseCode: 'MATH 401', title: 'Calculus Problem Set 1', dueDate: '2025-10-15', points: '85', status: 'graded' },
-    { courseCode: 'MATH 401', title: 'Midterm Preparation', dueDate: '2025-11-10', points: '90', status: 'graded' },
-    { courseCode: 'MATH 401', title: 'Final Project: Graphs', dueDate: '2025-12-30', points: '100 pts', status: 'todo' },
-    
-    // CS 101
-    { courseCode: 'CS 101', title: 'Intro to Algorithms Quiz', dueDate: '2025-10-20', points: '100', status: 'graded' },
-    { courseCode: 'CS 101', title: 'Database Design Schema', dueDate: '2025-11-25', points: '75', status: 'graded' },
-    { courseCode: 'CS 101', title: 'SQL Queries Homework', dueDate: '2025-12-15', points: '100 pts', status: 'submitted' },
-    
-    // CS 302
-    { courseCode: 'CS 302', title: 'Process Scheduling Sim', dueDate: '2025-11-05', points: '88', status: 'graded' },
-    { courseCode: 'CS 302', title: 'Memory Management Report', dueDate: '2025-12-25', points: '100 pts', status: 'todo' },
-
-    // PHY 101
-    { courseCode: 'PHY 101', title: 'Lab Report: Gravity', dueDate: '2025-11-12', points: '95', status: 'graded' },
-    { courseCode: 'PHY 101', title: 'Thermodynamics Essay', dueDate: '2025-12-05', points: '100 pts', status: 'submitted' }
-  ];
-
-  try {
-    // Duyuruları Yükle
-    for (const ann of fakeAnnouncements) {
-      await addDoc(collection(db, "announcements"), ann);
-    }
-    console.log("✅ Duyurular eklendi.");
-
-    // Ödevleri Yükle
-    for (const assign of fakeAssignments) {
-      await addDoc(collection(db, "assignments"), assign);
-    }
-    console.log("✅ Ödevler eklendi.");
-
-    alert("🎉 İşlem Tamam! Sisteme 5 duyuru ve 10 ödev başarıyla enjekte edildi.");
-    
-    // Sayfayı yenile ki veriler görünsün
-    window.location.reload();
-
-  } catch (error) {
-    console.error("Veri ekleme hatası:", error);
-    alert("Bir hata oluştu.");
-  }
-};
-
-// DataManager.ts en altına ekle:
-
 // 5. Öğretmen: Canlı Ödev Takibi (Real-time Assignments)
 export const listenToRealTimeAssignments = (callback: (assignments: any[]) => void) => {
   // Tüm ödevleri dinle

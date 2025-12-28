@@ -92,8 +92,6 @@ const translations = {
     navAbout: "About Project",
     aboutTitle: "Project Details",
     aboutDesc: "Information about the system and team",
-    
-    // --- EKSİK OLAN KISIMLAR BURADA ---
     sectOverview: "Overview",
     txtOverview: "The Real-Time Attendance System is designed to automate student attendance monitoring using facial recognition. It aims to improve accuracy and save time for instructors.",
     sectObjectives: "Project Objectives",
@@ -111,16 +109,11 @@ const translations = {
     successReg: "Registration Successful! You can now login."
   }
 };
-// --- GEREKLİ IMPORTLARI SAYFANIN EN BAŞINA EKLEDİĞİNDEN EMİN OL:
-// import { db } from './firebase';
-// import { doc, getDoc, setDoc } from "firebase/firestore";
-
 type ViewState = 'selection' | 'student' | 'admin' | 'register' | 'about';
 type NotificationType = 'success' | 'error' | null;
 type LangType = 'tr' | 'en';
 
 interface LoginPageProps {
-  // App.tsx'teki yapıya uyması için id parametresini ekledik
   onLoginSuccess: (role: 'student' | 'teacher' | 'principal', id: string) => void;
 }
 
@@ -138,10 +131,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
-  
-  // DİKKAT: Büyük/Küçük harf uyumu için senin kodundaki yapıyı korudum
   const [rememberMe, setRememberMe] = useState(false);
-  
   const [registerRole, setRegisterRole] = useState<'student' | 'admin'>('student');
   const [adminSecret, setAdminSecret] = useState('');
 
@@ -173,9 +163,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setView('selection');
   };
 
-  // --- MÜDÜR GİRİŞİ FONKSİYONU (YENİ) ---
+  // --- MÜDÜR GİRİŞİ FONKSİYONU ---
   const handlePrincipalLogin = () => {
-    // Müdür şifresiz giriyor, direkt App.tsx'e bildiriyoruz
     onLoginSuccess('principal', 'mudur@maltepe.edu.tr');
   };
 
@@ -204,16 +193,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           setIsLoading(false);
         }
       } 
-      // 2. AKADEMİSYEN KAYDI (Firebase'e Yazılacak - YENİ)
+      // 2. AKADEMİSYEN KAYDI 
       else {
         setIsLoading(true);
         try {
-          // Firestore'a kaydet
           await setDoc(doc(db, "teachers", email), {
             name,
             surname,
             email,
-            password, // Güvenlik notu: Gerçek projede hashlenmeli
+            password, 
             role: 'teacher',
             assignedCourses: []
           });
@@ -230,7 +218,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     
     // --- GİRİŞ YAPMA İŞLEMİ ---
     else {
-      // 1. ÖĞRENCİ GİRİŞİ (Mevcut Sistem)
+      // 1. ÖĞRENCİ GİRİŞİ
       if (view === 'student') {
         if (!studentNumber) return showToast(lang === 'tr' ? 'Öğrenci No Gerekli' : 'ID Required', 'error');
         
@@ -269,7 +257,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         }
       } 
       
-      // 2. AKADEMİSYEN GİRİŞİ (Firebase'den Kontrol - YENİ)
+      // 2. AKADEMİSYEN GİRİŞİ
       else if (view === 'admin') {
         if (!email) return showToast(lang === 'tr' ? 'Email Gerekli' : 'Email Required', 'error');
         
@@ -387,7 +375,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <button className="role-button" onClick={() => setView('admin')}>{t.adminLogin}</button>
       </div>
       
-      {/* --- MÜDÜR GİRİŞİ BUTONU (YENİ EKLENDİ) --- */}
+      {/* --- MÜDÜR GİRİŞİ BUTONU --- */}
       <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
           <button 
             className="role-button" 
