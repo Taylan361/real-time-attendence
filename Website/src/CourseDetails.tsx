@@ -2,7 +2,6 @@ import React from 'react';
 import './Dashboard.css';
 
 interface CourseDetailsProps {
-  courseId: string | null;
   onBack: () => void;
 }
 

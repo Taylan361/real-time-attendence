@@ -35,7 +35,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [userName, setUserName] = useState('Student');
   const [activeView, setActiveView] = useState<ViewType>('dashboard'); 
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  
+   
   const [studentInfo, setStudentInfo] = useState<Student | null>(null);
   const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
   const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
@@ -64,7 +64,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     // 2. Verileri Çekme
     const fetchData = async () => {
       const currentStudentId = localStorage.getItem('currentStudentId') || '220706010';
-  
+   
       const data = await getStudentData(currentStudentId);
       
       if (data) {

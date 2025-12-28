@@ -1,6 +1,7 @@
 import React from 'react';
 import './Dashboard.css';
 
+// Dashboard ile iletişim kuracak fonksiyon (Parametresiz)
 interface MyCoursesProps {
   onCourseSelect: (courseName: string) => void;
   enrolledCodes: string[]; // YENİ: Hangi dersleri aldığımız bilgisi buraya geliyor
@@ -22,11 +23,13 @@ export const MyCourses: React.FC<MyCoursesProps> = ({ onCourseSelect, enrolledCo
 
   return (
     <div className="courses-container fade-in">
+      {/* SAYFA BAŞLIĞI */}
       <div className="page-header">
-        <h2>My Courses</h2>
-        <p>Enrolled courses for Fall 2025</p>
+        <h2>Derslerim</h2>
+        <p>2025 Güz döneminde kayıtlı olduğun dersler</p>
       </div>
 
+      {/* DERS KARTLARI GRİDİ */}
       <div className="courses-grid-large">
         {myCourses.length > 0 ? (
           myCourses.map((course, index) => (
@@ -70,8 +73,8 @@ export const MyCourses: React.FC<MyCoursesProps> = ({ onCourseSelect, enrolledCo
           ))
         ) : (
           <div style={{gridColumn: '1 / -1', textAlign: 'center', padding: '40px', background: '#f5f5f5', borderRadius: '10px'}}>
-             <h3>No courses found.</h3>
-             <p>It looks like you are not enrolled in any courses yet.</p>
+              <h3>No courses found.</h3>
+              <p>It looks like you are not enrolled in any courses yet.</p>
           </div>
         )}
       </div>

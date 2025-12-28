@@ -4,7 +4,7 @@ import { getStudentData, completeStudentRegistration } from './DataManager';
 import { db } from './firebase'; // Firebase bağlantısı
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-// Görseller (Senin dosya yollarınla aynı kalmalı)
+// Resim Importları
 import logoImg from './assets/logo.jpg';
 import trFlag from './assets/tr.jpg';
 import enFlag from './assets/en.jpg';
