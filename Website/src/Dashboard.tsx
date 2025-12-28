@@ -34,7 +34,7 @@ type ViewType = 'dashboard' | 'courses' | 'assignments' | 'grades' | 'calendar' 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [userName, setUserName] = useState('Student');
   const [activeView, setActiveView] = useState<ViewType>('dashboard'); 
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  
    
   const [studentInfo, setStudentInfo] = useState<Student | null>(null);
   const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
@@ -121,8 +121,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   }, [studentInfo, activeSessionCourse]);
 
   // --- YÖNLENDİRME FONKSİYONLARI ---
-  const handleViewCourse = (courseName: string) => {
-    setSelectedCourseId(courseName);
+const handleViewCourse = (_courseName: string) => {
     setActiveView('course-detail');
   };
 
