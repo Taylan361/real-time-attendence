@@ -1,27 +1,37 @@
-# Python 3.9 slim sürümü (Hafif ve hızlı)
+# Python 3.9 slim kullanıyoruz (Bu wheel dosyası 3.9 içindir, değiştirme)
 FROM python:3.9-slim
 
-# Çalışma klasörünü ayarla
+# Çalışma klasörü
 WORKDIR /app
 
-# Gerekli araçları yükle
-# DÜZELTME: 'libgl1-mesa-glx' yerine 'libgl1' yazdık.
-# Ayrıca 'build-essential' ekledik (g++, make vb. hepsini içerir).
+# Gerekli sistem araçlarını yükle (wget ekledik)
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     libgl1 \
     libglib2.0-0 \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Dosyaları kopyala
 COPY . .
 
-# Python kütüphanelerini yükle (Bu aşama biraz uzun sürebilir)
+# 1. ADIM: Dlib'i DERLEMEDEN, hazır binary (wheel) olarak indir ve kur
+# Bu işlem RAM kullanımını engeller.
+RUN wget https://github.com/sachadee/Dlib/raw/main/dlib-19.22.99-cp39-cp39-linux_x86_64.whl
+RUN pip install dlib-19.22.99-cp39-cp39-linux_x86_64.whl
+
+# 2. ADIM: Şimdi face-recognition kur (Zaten dlib kurulu olduğu için hata vermez)
+RUN pip install face_recognition
+
+# 3. ADIM: Diğer gereksinimleri (Flask vb.) kur
 RUN pip install --no-cache-dir -r requirements.txt
+
+# İndirdiğimiz gereksiz dosyayı sil
+RUN rm dlib-19.22.99-cp39-cp39-linux_x86_64.whl
 
 # Portu aç
 EXPOSE 5000
 
-# Uygulamayı başlat
+# Başlat
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

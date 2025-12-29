@@ -4,6 +4,7 @@ import {
   query, where, arrayUnion, setDoc, // DÜZELTME: 'orderBy' buradan silindi.
   getDoc, onSnapshot, orderBy
 } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // --- TİP TANIMLARI (Interfaces) ---
 // DİKKAT: Başlarında 'export' yazması ŞART!
@@ -34,6 +35,42 @@ export interface Course {
 // ... dosyanın geri kalanı (fonksiyonlar) aynı kalabilir ...
 
 // --- FONKSİYONLAR ---
+
+// --- FOTOĞRAF YÜKLEME ---
+export const uploadProfileImage = async (file: File, studentId: string) => {
+  try {
+    const storage = getStorage();
+    
+    // KRİTİK NOKTA: Dosya adı ne olursa olsun, biz onu 'student_photos/OGRENCI_NO.jpg' yapıyoruz.
+    // Python scriptin bu sayede onu tanıyacak.
+    const storageRef = ref(storage, `student_photos/${studentId}.jpg`);
+    
+    // 1. Dosyayı Storage'a yükle
+    await uploadBytes(storageRef, file);
+    
+    // 2. Yüklenen dosyanın internet linkini al
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    // 3. Firestore'daki öğrenci kaydına bu linki işle (ki bir daha sormayalım)
+    // Önce öğrencinin dökümanını bulmamız lazım
+    const studentsRef = collection(db, "students");
+    const q = query(studentsRef, where("studentId", "==", studentId));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        const studentDoc = querySnapshot.docs[0];
+        await updateDoc(doc(db, "students", studentDoc.id), {
+            photoURL: downloadURL, // Profilde göstermek için
+            hasFaceRecord: true    // Sisteme kaydı var mı kontrolü için
+        });
+    }
+
+    return { success: true, url: downloadURL };
+  } catch (error) {
+    console.error("Fotoğraf yükleme hatası:", error);
+    return { success: false, error };
+  }
+};
 
 // 1. DUYURU EKLE (Öğretmen)
 export const addAnnouncementToFirebase = async (announcement: Announcement) => {

@@ -7,7 +7,8 @@ import { Calendar } from './Calendar';
 import { CourseDetails } from './CourseDetails';
 import { AssignmentDetails } from './AssignmentDetails';
 import { FaceAuthModal } from './FaceAuthModal';
-import { 
+import { PhotoRequirementModal } from './PhotoRequirementModal';
+import {
   getStudentData, 
   type Student, 
   getAnnouncementsByCourses, 
@@ -32,13 +33,13 @@ interface Assignment {
 
 }
 
+
 type ViewType = 'dashboard' | 'courses' | 'assignments' | 'grades' | 'calendar' | 'course-detail' | 'assignment-detail' | 'profile' | 'settings';
 
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [userName, setUserName] = useState('Student');
   const [activeView, setActiveView] = useState<ViewType>('dashboard'); 
-  
-   
+  const [showPhotoWarning, setShowPhotoWarning] = useState(false);
   const [studentInfo, setStudentInfo] = useState<Student | null>(null);
   const [recentAnnouncements, setRecentAnnouncements] = useState<Announcement[]>([]);
   const [myAssignments, setMyAssignments] = useState<Assignment[]>([]);
@@ -72,6 +73,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       
       if (data) {
         setStudentInfo(data);
+        if (!data.photoURL && !data.hasFaceRecord) {
+                setShowPhotoWarning(true);
+            }
         if (data.name) setUserName(data.name);
 
         if (data.enrolledCourses && data.enrolledCourses.length > 0) {
@@ -454,16 +458,20 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="dashboard-layout">
-          <FaceAuthModal
-            isOpen={showFaceAuth}
-            onClose={() => setShowFaceAuth(false)}
-            onSuccess={handleFaceAuthSuccess}
-            studentName={userName}
-            studentId={studentInfo?.studentId || "220706010"}
-          />
+          <>
+              <PhotoRequirementModal
+                  isOpen={showPhotoWarning}
+                  studentId={studentInfo?.studentId || ""}
+                  onSuccess={(url) => {
+                      setShowPhotoWarning(false);
+                      setStudentInfo(prev => prev ? {...prev, photoURL: url} : null);
+                      alert("Fotoğraf başarıyla yüklendi! Sistem artık sizi tanıyabilir.");
+                  }}
+              />
+              <div className="dashboard-layout">
+                <FaceAuthModal isOpen={showFaceAuth} onClose={() => setShowFaceAuth(false)} onSuccess={handleFaceAuthSuccess} studentName={userName} studentId={studentInfo?.studentId || "220706010"} />
 
-      <aside className="sidebar">
+    <aside className="sidebar">
         <div className="sidebar-logo"><div className="logo-icon">🎓</div><h2>UniPortal</h2></div>
         <nav className="sidebar-menu">
           <div className={`menu-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}><span className="icon">🏠</span> Dashboard</div>
@@ -480,7 +488,7 @@ const SettingsPage = () => {
           <div className="search-bar"><span>🔍</span><input type="text" placeholder="Search..." /></div>
           <div className="user-profile">
       
-{/* Profil Resmi ve Menü */}
+
 <div className="user-info" style={{position: 'relative', cursor: 'pointer'}} onClick={() => setShowUserMenu(!showUserMenu)}>
     <div className="details">
         <span className="u-name">{userName}</span>
@@ -545,5 +553,6 @@ const SettingsPage = () => {
         </div>
       </main>
     </div>
+          </>
   );
 };
