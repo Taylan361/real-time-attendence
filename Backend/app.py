@@ -176,6 +176,20 @@ def detect_face():
         print(f"Server Hatası: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/refresh', methods=['GET'])
+def refresh_faces():
+    """Frontend'den tetiklenince yüzleri yeniden yükler."""
+    print("🔄 İstek üzerine yüz listesi güncelleniyor...")
+    try:
+        load_faces_from_firebase() # Var olan fonksiyonu tekrar çağırıyoruz
+        return jsonify({
+            "status": "success",
+            "message": f"Liste güncellendi. Toplam {len(known_face_ids)} kişi hafızada."
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ... if __name__ == '__main__': ...
 if __name__ == '__main__':
     # Lokalde çalışırken debug modunu aç
     app.run(host='0.0.0.0', port=5001, debug=True)
