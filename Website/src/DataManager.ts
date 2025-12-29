@@ -23,6 +23,9 @@ export interface Student {
   studentId: string;
   name: string;
   enrolledCourses: string[];
+  // --- AŞAĞIDAKİLER EKLENDİ ---
+  photoURL?: string;       // Profil fotoğrafı linki
+  hasFaceRecord?: boolean; // Yüz kaydı var mı bilgisi
 }
 
 export interface Course {
