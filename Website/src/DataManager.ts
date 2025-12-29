@@ -35,27 +35,20 @@ export interface Course {
   instructor: string;
 }
 
-// ... dosyanın geri kalanı (fonksiyonlar) aynı kalabilir ...
-
 // --- FONKSİYONLAR ---
 
 // --- FOTOĞRAF YÜKLEME ---
 export const uploadProfileImage = async (file: File, studentId: string) => {
   try {
     const storage = getStorage();
-    
-    // KRİTİK NOKTA: Dosya adı ne olursa olsun, biz onu 'student_photos/OGRENCI_NO.jpg' yapıyoruz.
-    // Python scriptin bu sayede onu tanıyacak.
     const storageRef = ref(storage, `student_photos/${studentId}.jpg`);
     
-    // 1. Dosyayı Storage'a yükle
     await uploadBytes(storageRef, file);
     
     // 2. Yüklenen dosyanın internet linkini al
     const downloadURL = await getDownloadURL(storageRef);
     
-    // 3. Firestore'daki öğrenci kaydına bu linki işle (ki bir daha sormayalım)
-    // Önce öğrencinin dökümanını bulmamız lazım
+
     const studentsRef = collection(db, "students");
     const q = query(studentsRef, where("studentId", "==", studentId));
     const querySnapshot = await getDocs(q);
@@ -67,6 +60,14 @@ export const uploadProfileImage = async (file: File, studentId: string) => {
             hasFaceRecord: true    // Sisteme kaydı var mı kontrolü için
         });
     }
+      try {
+              // Sunucuya "Hafızanı tazele" diyoruz
+              console.log("Sunucuya yenileme isteği gönderiliyor...");
+              await fetch('https://maltepe-yuz-tanima.onrender.com/refresh');
+              console.log("Sunucu hafızası güncellendi!");
+          } catch (apiError) {
+              console.error("Sunucu yenilenemedi (Önemli değil, sonraki restartta düzelir):", apiError);
+          }
 
     return { success: true, url: downloadURL };
   } catch (error) {
