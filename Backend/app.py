@@ -14,7 +14,18 @@ BUCKET_NAME = 'maltepe-gyos.firebasestorage.app'
 
 # Firebase Bağlantısı
 try:
-    cred = credentials.Certificate("serviceAccountKey.json")
+    # 1. Önce Render'daki gizli değişkene bakar
+    if os.getenv('FIREBASE_CREDENTIALS'):
+        print("🔒 Render Environment üzerinden bağlanılıyor...")
+        # JSON stringini Python sözlüğüne çevirir
+        service_account_info = json.loads(os.getenv('FIREBASE_CREDENTIALS'))
+        cred = credentials.Certificate(service_account_info)
+    
+    # 2. Eğer o yoksa (Lokalde çalışıyorsan) dosyaya bakar
+    else:
+        print("📂 Local dosya üzerinden bağlanılıyor...")
+        cred = credentials.Certificate("serviceAccountKey.json")
+
     firebase_admin.initialize_app(cred, {
         'storageBucket': BUCKET_NAME
     })
