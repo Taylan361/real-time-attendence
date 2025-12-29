@@ -1,7 +1,0 @@
-flask
-flask-cors
-face-recognition
-numpy
-firebase-admin
-gunicorn
-Pillow
