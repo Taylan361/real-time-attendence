@@ -76,6 +76,7 @@ else:
 def home():
     return "<h1>Yüz Tanıma API Çalışıyor! 🚀</h1><p>Bu bir API servisidir. İstekleri /detect adresine POST olarak atmalısın.</p>"
 @app.route('/detect', methods=['POST'])
+@app.route('/detect', methods=['POST'])
 def detect_face():
     data = request.get_json()
     
@@ -83,35 +84,37 @@ def detect_face():
         return jsonify({"status": "fail", "message": "Resim verisi gelmedi"}), 400
 
     try:
-        # 1. React'tan gelen Base64 verisini temizle ve resme çevir
+        # Resim işleme kısımları aynı...
         image_data = data['image'].split(",")[1]
         decoded_image = base64.b64decode(image_data)
         image = Image.open(io.BytesIO(decoded_image))
-        
-        # 2. Resmi numpy array'e çevir
         image_np = np.array(image)
 
-        # 3. Gelen resimdeki yüzleri bul
         face_locations = face_recognition.face_locations(image_np)
         face_encodings = face_recognition.face_encodings(image_np, face_locations)
 
         if len(face_encodings) == 0:
-            return jsonify({"status": "fail", "message": "Görüntüde yüz bulunamadı"})
+            print("❌ Görüntüde yüz bulunamadı.")
+            return jsonify({"status": "fail", "message": "Yüz görülemedi, lütfen ışığı kontrol edin."})
 
-        # 4. Bulunan yüzü kayıtlı yüzlerle karşılaştır
-        # Şimdilik görüntüdeki İLK yüzü alıyoruz (Birden fazla kişi varsa ilkini alır)
         unknown_face_encoding = face_encodings[0]
         
-        # Mesafeleri hesapla (Daha düşük mesafe = Daha yüksek benzerlik)
+        # Eğer hiç kayıtlı yüz yoksa hata dön
+        if len(known_face_encodings) == 0:
+            print("⚠️ Hafızada hiç kayıtlı yüz yok! (Firebase boş veya yüklenmedi)")
+            return jsonify({"status": "fail", "message": "Sistemde kayıtlı öğrenci yüzü yok."})
+
+        # Mesafeleri hesapla
         face_distances = face_recognition.face_distance(known_face_encodings, unknown_face_encoding)
-        
-        # En iyi eşleşmeyi bul
         best_match_index = np.argmin(face_distances)
-        
-        # Eşik değeri: 0.5 veya 0.6 iyidir. 0.6 altı benzer demektir.
-        if face_distances[best_match_index] < 0.5:
+        best_distance = face_distances[best_match_index]
+
+        print(f"🔍 En yakın eşleşme mesafesi: {best_distance}")
+
+        # EŞİK DEĞERİ GÜNCELLEMESİ: 0.5 yerine 0.6 yapıyoruz (Daha esnek olsun)
+        if best_distance < 0.6:
             matched_id = known_face_ids[best_match_index]
-            confidence = round((1 - face_distances[best_match_index]) * 100, 2)
+            confidence = round((1 - best_distance) * 100, 2)
             
             print(f"✅ Eşleşme bulundu: {matched_id} (Benzerlik: %{confidence})")
             
@@ -120,8 +123,8 @@ def detect_face():
                 "studentId": matched_id
             })
         else:
-            print("❌ Tanımsız yüz")
-            return jsonify({"status": "fail", "message": "Tanımsız yüz"})
+            print(f"❌ Yüz tanınamadı. En yakın kişi: {known_face_ids[best_match_index]} ama mesafe ({best_distance}) > 0.6")
+            return jsonify({"status": "fail", "message": "Yüz tanınamadı"})
 
     except Exception as e:
         print(f"Server Hatası: {e}")
