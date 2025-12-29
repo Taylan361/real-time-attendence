@@ -70,10 +70,7 @@ export const FaceAuthModal: React.FC<FaceAuthModalProps> = ({
             ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
             // Resmi Base64 formatına çevir
             const imageSrc = canvas.toDataURL('image/jpeg');
-
-            // 2. Python Backend'e (app.py) gönder
-            // NOT: Eğer telefondan deniyorsan 'localhost' yerine bilgisayarın IP adresini yaz (örn: 192.168.1.35)
-            const response = await fetch('http://localhost:5001/detect', {
+            const response = await fetch('https://maltepe-yuz-tanima.onrender.com/detect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image: imageSrc })
