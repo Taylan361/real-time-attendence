@@ -10,7 +10,7 @@ from PIL import Image
 
 app = Flask(__name__)
 CORS(app)
-BUCKET_NAME = 'maltepe-gyos.firebasestorage.app'
+BUCKET_NAME = 'maltepe-gyos.appspot.com'
 
 # Firebase Bağlantısı
 try:
