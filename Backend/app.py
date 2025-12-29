@@ -12,30 +12,45 @@ from PIL import Image
 
 app = Flask(__name__)
 CORS(app)
-BUCKET_NAME = 'maltepe-gyos.firebasestorage.app'
 
-# Firebase Bağlantısı
+# Firebase Bucket Adı (Senin projenin doğru adı)
+BUCKET_NAME = 'maltepe-gyos.firebasestorage.com'
+
+# --- FIREBASE BAĞLANTISI (Render & Local Uyumlu) ---
 try:
-    # 1. Önce Render'daki gizli değişkene bakar
+    # 1. Önce Render'daki gizli Environment Variable'a bakar
     if os.getenv('FIREBASE_CREDENTIALS'):
         print("🔒 Render Environment üzerinden bağlanılıyor...")
-        # JSON stringini Python sözlüğüne çevirir
+        
+        # JSON stringini Python sözlüğüne çevir
         service_account_info = json.loads(os.getenv('FIREBASE_CREDENTIALS'))
+        
+        # Render'da bazen private_key içindeki \n karakterleri bozulur (tek satır olur).
+        # Onları gerçek satır sonuna çeviriyoruz:
+        if 'private_key' in service_account_info:
+             service_account_info['private_key'] = service_account_info['private_key'].replace('\\n', '\n')
+
         cred = credentials.Certificate(service_account_info)
     
-    # 2. Eğer o yoksa (Lokalde çalışıyorsan) dosyaya bakar
+    # 2. Eğer Environment yoksa (Lokalde çalışıyorsan) dosyaya bakar
     else:
-        print("📂 Local dosya üzerinden bağlanılıyor...")
-        cred = credentials.Certificate("serviceAccountKey.json")
+        print("📂 Local dosya (serviceAccountKey.json) üzerinden bağlanılıyor...")
+        if os.path.exists("serviceAccountKey.json"):
+            cred = credentials.Certificate("serviceAccountKey.json")
+        else:
+            raise FileNotFoundError("serviceAccountKey.json bulunamadı ve Environment Variable yok!")
 
-    firebase_admin.initialize_app(cred, {
-        'storageBucket': BUCKET_NAME
-    })
+    # Firebase Başlat
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred, {
+            'storageBucket': BUCKET_NAME
+        })
     print("✅ Firebase bağlantısı başarılı!")
+    
 except Exception as e:
-    print(f"❌ Firebase hatası: {e}")
+    print(f"🔥 KRİTİK FIREBASE BAĞLANTI HATASI: {e}")
 
-# Yüz verilerini tutacağımız listeler (Global Değişkenler)
+# Global Değişkenler (Yüz verilerini RAM'de tutacağız)
 known_face_encodings = []
 known_face_ids = []
 
@@ -47,27 +62,26 @@ def load_faces_from_firebase():
     
     try:
         bucket = storage.bucket()
-        # Debug 1: Bakalım bucket'a erişebiliyor mu?
-        print(f"📂 Bucket ({BUCKET_NAME}) içindeki dosyalar listeleniyor...")
-        blobs = list(bucket.list_blobs(prefix='student_photos/')) # Listeye çevirip sayıyı görelim
+        # Klasördeki dosyaları listele
+        print(f"📂 Bucket ({BUCKET_NAME}) taranıyor...")
+        blobs = list(bucket.list_blobs(prefix='student_photos/'))
         
-        print(f"📊 Toplam {len(blobs)} adet dosya bulundu.")
+        print(f"📊 Toplam {len(blobs)} adet dosya bulundu (Klasör dahil).")
 
         count = 0
         local_encodings = []
         local_ids = []
 
         for blob in blobs:
+            # Sadece resim dosyalarını al, klasörün kendisini alma
             if (blob.name.endswith(".jpg") or blob.name.endswith(".png")) and blob.name != 'student_photos/':
                 try:
                     file_name = blob.name.split('/')[-1]
                     student_id = file_name.split('.')[0]
                     
-                    # Debug 2: İndirme başlıyor
                     print(f"  ⬇️ İndiriliyor: {file_name} ...")
                     image_bytes = blob.download_as_bytes()
                     
-                    # Debug 3: Yüz okuma başlıyor (En ağır işlem burası)
                     print(f"  ⚙️ Yüz işleniyor: {file_name} ...")
                     image = face_recognition.load_image_file(io.BytesIO(image_bytes))
                     encodings = face_recognition.face_encodings(image)
@@ -83,25 +97,33 @@ def load_faces_from_firebase():
                 except Exception as inner_e:
                     print(f"  ❌ Hata ({blob.name}): {inner_e}")
 
+        # Global listeleri güncelle
         known_face_encodings = local_encodings
         known_face_ids = local_ids
         print(f"🏁 İŞLEM BİTTİ: Toplam {count} öğrenci yüzü hafızaya alındı.")
         
     except Exception as e:
-        print(f"🔥 KRİTİK HATA: Yüzler yüklenirken hata oluştu: {e}")
+        print(f"🔥 YÜZLERİ YÜKLERKEN HATA OLUŞTU: {e}")
 
-# --- KRİTİK DÜZELTME BURADA ---
-# Gunicorn ile çalışırken de bu fonksiyonun çağrılması ŞART!
-# if __name__ kontrolünü kaldırdık.
+# --- SUNUCU BAŞLARKEN YÜZLERİ YÜKLE ---
+# Gunicorn veya Flask run fark etmeksizin çalışması için buraya koyduk
 with app.app_context():
     load_faces_from_firebase()
 
 @app.route('/')
 def home():
-    return f"<h1>Yüz Tanıma API Çalışıyor! 🚀</h1><p>Hafızadaki Öğrenci Sayısı: {len(known_face_ids)}</p>"
+    """Sunucunun durumunu ve hafızadaki öğrenci sayısını gösterir."""
+    return f"""
+    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+        <h1 style="color: #2ecc71;">Yüz Tanıma API Çalışıyor! 🚀</h1>
+        <p>Bağlı Bucket: <strong>{BUCKET_NAME}</strong></p>
+        <p>Hafızadaki Öğrenci Sayısı: <strong style="font-size: 24px;">{len(known_face_ids)}</strong></p>
+    </div>
+    """
 
 @app.route('/detect', methods=['POST'])
 def detect_face():
+    """React'ten gelen fotoğrafı analiz eder."""
     data = request.get_json()
     
     if not data or 'image' not in data:
@@ -119,13 +141,12 @@ def detect_face():
         face_encodings = face_recognition.face_encodings(image_np, face_locations)
 
         if len(face_encodings) == 0:
-            return jsonify({"status": "fail", "message": "Görüntüde yüz bulunamadı. Işığı kontrol edin."})
+            return jsonify({"status": "fail", "message": "Görüntüde yüz bulunamadı. Lütfen ışığı kontrol edin."})
 
         # --- ÇÖKME KORUMASI ---
-        # Eğer hafızada hiç öğrenci yoksa argmin yapmaya çalışma!
         if len(known_face_encodings) == 0:
             print("⚠️ HATA: Sistemde hiç kayıtlı yüz yok!")
-            return jsonify({"status": "fail", "message": "Sistem veritabanı boş, kimseyle eşleşemiyor."})
+            return jsonify({"status": "fail", "message": "Sistem veritabanı boş (0 Öğrenci)."})
 
         # 3. Karşılaştırma
         unknown_face_encoding = face_encodings[0]
@@ -136,18 +157,25 @@ def detect_face():
         
         print(f"🔍 En yakın mesafe: {best_distance}")
 
-        # Eşik değeri (0.6)
+        # Eşik Değeri (Threshold): 0.6 standarttır.
+        # Daha düşük = Daha katı, Daha yüksek = Daha gevşek
         if best_distance < 0.6:
             matched_id = known_face_ids[best_match_index]
             confidence = round((1 - best_distance) * 100, 2)
-            print(f"✅ Eşleşme: {matched_id} (%{confidence})")
-            return jsonify({"status": "success", "studentId": matched_id})
+            print(f"✅ Eşleşme: {matched_id} (Benzerlik: %{confidence})")
+            return jsonify({
+                "status": "success",
+                "studentId": matched_id,
+                "confidence": confidence
+            })
         else:
-            return jsonify({"status": "fail", "message": "Tanımsız yüz"})
+            print(f"❌ Tanınamadı. En yakın: {known_face_ids[best_match_index]} ({best_distance})")
+            return jsonify({"status": "fail", "message": "Yüz tanınamadı"})
 
     except Exception as e:
         print(f"Server Hatası: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Lokalde çalışırken debug modunu aç
+    app.run(host='0.0.0.0', port=5001, debug=True)
