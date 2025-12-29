@@ -73,7 +73,7 @@ export const FaceAuthModal: React.FC<FaceAuthModalProps> = ({
 
             // 2. Python Backend'e (app.py) gönder
             // NOT: Eğer telefondan deniyorsan 'localhost' yerine bilgisayarın IP adresini yaz (örn: 192.168.1.35)
-            const response = await fetch('http://localhost:5000/detect', {
+            const response = await fetch('http://localhost:5001/detect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image: imageSrc })

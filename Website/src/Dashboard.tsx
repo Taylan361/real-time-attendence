@@ -455,7 +455,13 @@ const SettingsPage = () => {
 
   return (
     <div className="dashboard-layout">
-      <FaceAuthModal isOpen={showFaceAuth} onClose={() => setShowFaceAuth(false)} onSuccess={handleFaceAuthSuccess} studentName={userName} />
+          <FaceAuthModal
+            isOpen={showFaceAuth}
+            onClose={() => setShowFaceAuth(false)}
+            onSuccess={handleFaceAuthSuccess}
+            studentName={userName}
+            studentId={studentInfo?.studentId || "220706010"}
+          />
 
       <aside className="sidebar">
         <div className="sidebar-logo"><div className="logo-icon">🎓</div><h2>UniPortal</h2></div>
