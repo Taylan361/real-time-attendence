@@ -1,3 +1,5 @@
+import os
+import json
 import firebase_admin
 from firebase_admin import credentials, storage
 from flask import Flask, request, jsonify
@@ -45,7 +47,11 @@ def load_faces_from_firebase():
     
     try:
         bucket = storage.bucket()
-        blobs = bucket.list_blobs(prefix='student_photos/')
+        # Debug 1: Bakalım bucket'a erişebiliyor mu?
+        print(f"📂 Bucket ({BUCKET_NAME}) içindeki dosyalar listeleniyor...")
+        blobs = list(bucket.list_blobs(prefix='student_photos/')) # Listeye çevirip sayıyı görelim
+        
+        print(f"📊 Toplam {len(blobs)} adet dosya bulundu.")
 
         count = 0
         local_encodings = []
@@ -56,30 +62,33 @@ def load_faces_from_firebase():
                 try:
                     file_name = blob.name.split('/')[-1]
                     student_id = file_name.split('.')[0]
-
-                    image_bytes = blob.download_as_bytes()
-                    image = face_recognition.load_image_file(io.BytesIO(image_bytes))
                     
+                    # Debug 2: İndirme başlıyor
+                    print(f"  ⬇️ İndiriliyor: {file_name} ...")
+                    image_bytes = blob.download_as_bytes()
+                    
+                    # Debug 3: Yüz okuma başlıyor (En ağır işlem burası)
+                    print(f"  ⚙️ Yüz işleniyor: {file_name} ...")
+                    image = face_recognition.load_image_file(io.BytesIO(image_bytes))
                     encodings = face_recognition.face_encodings(image)
                     
                     if len(encodings) > 0:
                         local_encodings.append(encodings[0])
                         local_ids.append(student_id)
                         count += 1
-                        print(f"  -> Yüklendi: {student_id}")
+                        print(f"  ✅ Yüklendi: {student_id}")
                     else:
-                        print(f"  -> UYARI: {file_name} dosyasında yüz bulunamadı.")
+                        print(f"  ⚠️ UYARI: {file_name} dosyasında yüz bulunamadı.")
                 
                 except Exception as inner_e:
-                    print(f"  -> Hata ({blob.name}): {inner_e}")
+                    print(f"  ❌ Hata ({blob.name}): {inner_e}")
 
-        # Global listeleri güncelle
         known_face_encodings = local_encodings
         known_face_ids = local_ids
-        print(f"✅ Toplam {count} öğrenci yüzü hafızaya alındı.")
+        print(f"🏁 İŞLEM BİTTİ: Toplam {count} öğrenci yüzü hafızaya alındı.")
         
     except Exception as e:
-        print(f"❌ Yüzler yüklenirken hata oluştu: {e}")
+        print(f"🔥 KRİTİK HATA: Yüzler yüklenirken hata oluştu: {e}")
 
 # --- KRİTİK DÜZELTME BURADA ---
 # Gunicorn ile çalışırken de bu fonksiyonun çağrılması ŞART!
