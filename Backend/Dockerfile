@@ -1,10 +1,10 @@
-# Python 3.9 slim kullanıyoruz (Bu wheel dosyası 3.9 içindir, değiştirme)
+# Python 3.9 slim kullanıyoruz (dlib wheel dosyası buna uygun)
 FROM python:3.9-slim
 
 # Çalışma klasörü
 WORKDIR /app
 
-# Gerekli sistem araçlarını yükle (wget ekledik)
+# Gerekli sistem araçlarını yükle
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
@@ -16,18 +16,20 @@ RUN apt-get update && apt-get install -y \
 # Dosyaları kopyala
 COPY . .
 
-# 1. ADIM: Dlib'i DERLEMEDEN, hazır binary (wheel) olarak indir ve kur
-# Bu işlem RAM kullanımını engeller.
-RUN wget https://github.com/sachadee/Dlib/raw/main/dlib-19.22.99-cp39-cp39-linux_x86_64.whl
+# 1. ADIM: Dlib'i yeni ve çalışan bir kaynaktan indir
+# Önceki link ölmüş, bu link (OguzhanErturk reposu) aktif çalışıyor.
+RUN wget https://github.com/OguzhanErturk/dlib-wheels/raw/master/dlib-19.22.99-cp39-cp39-linux_x86_64.whl
+
+# 2. ADIM: İndirilen dosyayı kur
 RUN pip install dlib-19.22.99-cp39-cp39-linux_x86_64.whl
 
-# 2. ADIM: Şimdi face-recognition kur (Zaten dlib kurulu olduğu için hata vermez)
+# 3. ADIM: Artık face-recognition kurabiliriz
 RUN pip install face_recognition
 
-# 3. ADIM: Diğer gereksinimleri (Flask vb.) kur
+# 4. ADIM: Diğer gereksinimleri kur
 RUN pip install --no-cache-dir -r requirements.txt
 
-# İndirdiğimiz gereksiz dosyayı sil
+# İndirdiğimiz kurulum dosyasını temizle
 RUN rm dlib-19.22.99-cp39-cp39-linux_x86_64.whl
 
 # Portu aç
