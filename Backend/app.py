@@ -14,7 +14,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Firebase Bucket Adı (Senin projenin doğru adı)
-BUCKET_NAME = 'maltepe-gyos.firebasestorage.com'
+BUCKET_NAME = 'maltepe-gyos.firebasestorage.app'
 
 # --- FIREBASE BAĞLANTISI (Render & Local Uyumlu) ---
 try:
